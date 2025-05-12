@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User,Long> {
@@ -44,4 +45,8 @@ public interface UserRepository extends JpaRepository<User,Long> {
             @Param("linkedin") String linkedin,
             @Param("avatarUrl") String avatarUrl
     );
+
+    @Modifying
+    @Query("UPDATE User u SET u.lastLogin = ?2 WHERE u.id = ?1")
+    void updateLastLogin(Long userId, LocalDateTime lastLogin);
 }

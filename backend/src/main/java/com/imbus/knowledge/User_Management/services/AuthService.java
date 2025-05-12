@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -153,6 +154,11 @@ public class AuthService {
         );
 
     var user = userRepository.findByEmail(loginRequest.getEmail()).orElseThrow(() -> new UsernameNotFoundException("User not found!"));
+
+        // Update lastLogin
+        user.setLastLogin(LocalDateTime.now());
+        userRepository.save(user);
+
     var accessToken = jwtService.generateToken(user);
     var refreshToken = refreshTokenService.createRefreshToken(loginRequest.getEmail());
 

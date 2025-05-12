@@ -5,6 +5,9 @@ import com.imbus.knowledge.User_Management.entities.UserRole;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+
 @Data
 @NoArgsConstructor
 public class UserResponse {
@@ -12,6 +15,8 @@ public class UserResponse {
     private String name;
     private String email;
     private UserRole role;
+    private LocalDateTime lastLogin;
+    private String status;
     private String bio;
     private String location;
     private String phoneNumber;
@@ -25,6 +30,8 @@ public class UserResponse {
         response.setName(user.getName());
         response.setEmail(user.getEmail());
         response.setRole(user.getRole());
+        response.setLastLogin(user.getLastLogin());
+        response.setStatus(computeStatus(user.getLastLogin()));
         response.setBio(user.getBio());
         response.setLocation(user.getLocation());
         response.setPhoneNumber(user.getPhoneNumber());
@@ -32,5 +39,14 @@ public class UserResponse {
         response.setLinkedin(user.getLinkedin());
         response.setAvatarUrl(user.getAvatarUrl());
         return response;
+    }
+    private static String computeStatus(LocalDateTime lastLogin) {
+        if (lastLogin == null) return "Offline";// No login history
+
+        // Calculate minutes between lastLogin and current time
+        long minutesSinceLogin = ChronoUnit.MINUTES.between(lastLogin, LocalDateTime.now());
+
+        // Return "Online" if logged in within last 5 minutes
+        return minutesSinceLogin <= 5 ? "Online" : "Offline";
     }
 }

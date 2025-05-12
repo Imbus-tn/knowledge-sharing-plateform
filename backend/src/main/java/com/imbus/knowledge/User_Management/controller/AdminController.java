@@ -114,12 +114,17 @@ public class AdminController {
 
     @GetMapping("/users")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<UserResponse>> getAllUsers() {
+    public ResponseEntity<List<UserResponse>> getAllUsers(@AuthenticationPrincipal UserDetailsImpl userDetails) {
         List<User> users = userRepository.findAll();
+
+        // Get current user's ID from authenticated principal
+        Long currentUserId = userDetails.getUser().getId();
+
         List<UserResponse> response = users.stream()
-                .filter(user -> !UserRole.ADMIN.equals(user.getRole())) // Exclude ADMIN users
+                .filter(user -> !user.getId().equals(currentUserId))  // ✅ Exclude only current user
                 .map(UserResponse::fromEntity)
                 .collect(Collectors.toList());
+
         return ResponseEntity.ok(response);
     }
 

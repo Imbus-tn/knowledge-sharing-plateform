@@ -39,14 +39,16 @@ public class PostResponse {
 
     // Inner class for author info
     public static class AuthorDto {
+        private Long id;
         private String name;
         private String initials;
         private String avatarUrl;
 
         public static AuthorDto from(User user) {
             AuthorDto dto = new AuthorDto();
+            dto.id = user.getId();
             dto.name = user.getName();
-            dto.initials = user.getUsername().substring(0, 2); // Simplified
+            dto.initials = user.getUsername().substring(0, 2); // First two letters
             dto.avatarUrl = user.getAvatarUrl();
             return dto;
         }
