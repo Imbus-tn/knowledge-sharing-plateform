@@ -1,0 +1,46 @@
+content_id,title,type,description,category_id ,dateCreated,author_id,keywords
+1,API REST avec Spring Boot,Tutorial,Création d'une API avec Spring,34,2025-04-02 09:00:00,1,API
+2,NLP avec spaCy,Course,Traitement du langage naturel,38,2025-04-02 09:30:00,3,"NLP,  Machine learning "
+3,Sécurité avec JWT,Document,Authentification avec JWT,30,2025-04-02 09:15:00,2,JWT Securité
+4,Vidéo sur Serverless AWS,Video,Démo Lambda sur AWS,35,2025-04-02 10:00:00,4,serverless 
+5, Réalité Augmentée Unity,Tutorial,Création d'applis AR avec Unity,31,2025-04-02 10:15:00,17,Réalité augmenté 
+6,Chatbot avec Rasa,Course,Créer un chatbot intelligent,37,2025-04-02 10:30:00,20,chatbot
+7,Test automatisé avec Selenium,Tutorial,Automatiser vos tests web,40,2025-04-02 11:00:00,22,test 
+8,Edge AI avec Jetson Nano,Document,Exécuter l’IA en périphérie,36,2025-04-02 11:30:00,15,AI  edgeAI
+9,Introduction à Vue.js,Article,Introduction aux concepts fondamentaux de Vue.js et de son utilisation pour construire des UI.,1,2025-01-10,20,"vue,js  framework"
+10,Vue.js vs React,Article,Comparaison détaillée des deux frameworks populaires pour le développement frontend.,1,2025-02-15,25,"vue.js, react"
+11,Spring Boot Basics,Tutoriel,Tutoriel pour comprendre les bases de Spring Boot et sa mise en œuvre pour les applications backend.,12,2025-03-01,10,"spring boot, backend"
+12,L'IA et le Machine Learning,Article,Exploration de l'impact de l'intelligence artificielle sur divers secteurs industriels.,3,2025-02-10,31,"IA, machine learning"
+13,Vue.js et TypeScript,Tutoriel,Guide pour les débutants souhaitant se lancer dans le développement React.,1,2025-04-01,30,"react, débutant"
+14,Le Design Pattern MVC,Article,Explication du pattern architectural MVC et de son utilisation dans le développement d'applications.,10,2025-02-01,12,"mvc, design pattern"
+15,Java 17 Nouvelles Fonctions,Article,Exploration des nouvelles fonctionnalités introduites dans Java 17.,4,2025-03-20,11,"java, nouveautés"
+16,Introduction à Node.js,Tutoriel,Introduction à Node.js pour les développeurs cherchant à utiliser JavaScript côté serveur,12,2025-01-28,9,"node.js, backend"
+17,Les bases de Python,Tutoriel,Tutoriel pour apprendre Python et l'utiliser dans le développement web.,41,2025-02-14,8,"python, débutant"
+18,Les bases du Machine Learning,Article,Introduction aux bases du Machine Learning et aux techniques courantes utilisées en IA.,3,2025-01-18,7,"IA, machine learning"
+19,Firebase avec Vue.js,Tutoriel,Guide pour intégrer Firebase dans un projet Vue.js pour une gestion facile de la base de données.,1,2025-03-25,6,"vue.js, firebase"
+20,Introduction à Docker,Article,Présentation de Docker et comment il peut être utilisé pour simplifier la gestion des containers.,5,2025-04-03,9,"docker, devops"
+21,Mise en place d'un serveur REST,Tutoriel,Tutoriel pour mettre en place un serveur REST avec Node.js pour les API backend.,12,2025-01-22,13,"node.js, api"
+22,API GraphQL vs REST,Article,"Analyse comparative entre les deux approches API, GraphQL et REST.",22,2025-02-22,10,"graphql, api"
+23,Comprendre les WebSockets,Article,"Explication sur les WebSockets, un protocole pour la communication en temps réel dans les apps.",6,2025-03-05,16,"websockets, realtime"
+24,Les bonnes pratiques en JavaScript,Article,Meilleures pratiques pour écrire du code JavaScript optimisé et maintenable.,1,2025-04-01,29,"javascript, pratiques"
+25,Introduction à Git,Tutoriel,Introduction à l'outil Git pour le contrôle de version et la collaboration sur des projets,19,2025-02-28,27,"git, version control"
+26,Vue.js pour mobile,Article,Exploration de l'utilisation de Vue.js pour développer des applications mobiles.,11,2025-03-12,27,"vue.js, mobile"
+27,Développer avec Kotlin,Tutoriel,Tutoriel pour apprendre Kotlin et l'utiliser pour développer des applications Android.,8,2025-01-30,26,"kotlin, android"
+28,DevOps et Continuous Integration,Article,Introduction à DevOps et à l'intégration continue dans le cycle de développement logiciel.,5,2025-02-10,18,"devops, ci/cd"
+29,Introduction à TypeScript,Tutoriel,Tutoriel sur TypeScript et comment l'utiliser pour ajouter du typage statique à vos applications JavaScript.,1,2025-01-25,20,"typescript, javascript"
+31,Développer une application avec Angular,Tutoriel,Tutoriel pour créer une application avec Angular en utilisant des pratiques modernes.,13,2025-03-17,15,"angular, frontend"
+32,Prendre en main MongoDB,Tutoriel,"Guide d'introduction à MongoDB, une base de données NoSQL populaire.",2,2025-04-03,30,"mongodb, noSQL"
+33,Understanding Web Development,Article,A detailed overview of web development processes and tools.,42,2025-04-05,10,"web development, tools"
+34,Introduction to Cybersecurity,Article,A basic guide to understanding the core concepts of cybersecurity.,45,2025-04-06,15,"cybersecurity, security"
+35,Introduction to Data Science,Article,What data science is and why it is important for modern industries.,55,2025-04-07,20,"data science, machine learning"
+36,Introduction to Blockchain,Article,A beginner’s guide to understanding blockchain technology.,50,2025-04-08,25,"blockchain, cryptocurrency"
+37,Implementing Edge AI,Article,How to run AI models on edge devices using Jetson Nano.,65,2025-04-09,30,"edge computing, AI"
+38,Chatbot Development with Rasa,Tutorial,Learn how to develop chatbots using Rasa and Python.,69,2025-04-10,17,"chatbot, rasa, python"
+39,Building APIs with Node.js,Tutorial,Learn how to build REST APIs using Node.js and Express.,67,2025-04-11,12,"node.js, API, backend"
+40,Vue.js for Frontend Development,Tutorial,"Learn how to use Vue.js for building modern, reactive UIs.",53,2025-04-12,8,"vue.js, frontend"
+41,Machine Learning with Python,Tutorial,Introduction to using Python for Machine Learning.,44,2025-04-13,7,"python, machine learning"
+42,REST APIs vs GraphQL,Article,A comparison between REST APIs and GraphQL for web development.,67,2025-04-14,10,"API, GraphQL"
+43,The Basics of Artificial Intelligence,Article,An introduction to the core concepts of AI.,44,2025-04-15,6,"AI, artificial intelligence"
+44,Implementing CI/CD with Jenkins,Tutorial,A guide to setting up continuous integration and deployment with Jenkins.,46,2025-04-16,14,"CI/CD, Jenkins, devops"
+45,Getting Started with Docker,Tutorial,Learn how to use Docker to containerize your applications.,48,2025-04-17,16,"docker, containers"
+46,Cloud Computing with AWS,Tutorial,How to set up and use cloud services on AWS.,48,2025-04-18,11,"aws, cloud computing"

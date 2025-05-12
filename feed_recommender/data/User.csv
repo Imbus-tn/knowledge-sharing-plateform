@@ -1,0 +1,61 @@
+user_id,name,username,email,password,role
+1,Alice Dupont,alice,alice@example.com,pass123,USER
+2,Bob Martin,bob,bob@example.com,pass123,ADMIN
+3,Charlie Durand ,charlie,charlie@example.com,passw123,CONTRIBUTEUR
+4,David Lopez,david,david@example.com,pass123,USER
+5,Eva Bernard,eva,eva@example.com,12345,CONTRIBUTEUR
+6,	François Petit,françois,francois@example.com,5678,USER
+7,Georges Blanc,georges,	georges@example.com,passw123,USER
+8,Hélène Morel,helene ,helene@example.com,pass123,USER
+9,Isabelle Laurent,isabelle,isabelle@example.com,pass123,CONTRIBUTEUR
+10,	Jean Girard,jean,jean@example.com,jean123,USER
+11,Karim Boucher,karim,karim@example.com,karim456,CONTRIBUTEUR
+12,Laura Fontaine,laura,laura@example.com,password,USER
+13,Olivier Caron,olivier,olivier@example.com,123456,ADMIN
+14,	Paul Renaud,paul,paul@example.com,123456,USER
+15,Quentin Lemaitre,quentin,quentin@example.com,PASS<123>,USER
+16,Romain Pelletier,romain,romain@example.com,PASS<123>,USER
+17,	Sophie Durand,sophie,	sophie@example.com,pass123,CONTRIBUTEUR
+18,Thomas Gauthier,thomas,thomas@example.com,PASS123,USER
+19,Julie Meunier,julie,julie@example.com,pass123,CONTRIBUTOR
+20,Amine Chérif,amine,amine@example.com,12345678,USER
+21,Zoé Leclerc,zoe,zoe@example.com,PASS678,ADMIN
+22,	Lucas Perrin,lucas,lucas@example.com,PASS09876,USER
+23,Yasmine Ferchichi,yasmine,yasmine@ex.com,yas123,USER
+24,Mehdi Ayari,mehdi ,mehdi@ex.com,mehdi321,CONTRIBUTOR
+25,Lina Khelifi,lina ,lina@ex.com,pass789,USER
+26,Nizar Bouazizi,nizar,nizar@ex.com,test000,ADMIN
+27,Ilyes Trabelsi,ilyes,ilyes@ex.com,abcdef,CONTRIBUTOR
+28,Walid Jaziri,walid,walid@ex.com,xyz789,USER
+29,Mariem Khemiri,mariem,mariem@ex.com,mariem1,USER
+30,Firas Hammami,firas,firas@ex.com,firas123,CONTRIBUTOR
+31,Ghada Mahfoudh,ghada,ghada@ex.com,ghada456,USER
+32,Anis Slama,anis ,anis@ex.com,anpass,CONTRIBUTOR
+33,Nadia Roux,nadia,nadia@example.com,nadia321,CONTRIBUTOR
+34,Vincent Leroy,vincent,vincent@example.com,leroy123,USER
+35,Clara Monet,clara,clara@example.com,clara456,ADMIN
+36,Léo Rouanet,leo,leo@example.com,leo321,USER
+37,Manon Boulanger,manon,manon@example.com,boul123,USER
+38,Hugo Fabbri,hugo,hugo@example.com,hugo987,CONTRIBUTOR
+39,Anaïs Martin,anais,anais@example.com,anais111,USER
+40,Maxime Delorme,maxime,maxime@example.com,del999,ADMIN
+41,Chloé Bernard,chloe,chloe@example.com,chlo45,USER
+42,Baptiste Noël,baptiste,baptiste@example.com,noel789,CONTRIBUTOR
+43,Mélanie Carpentier,melanie,melanie@example.com,mel567,USER
+44,Julien Fabre,julien,julien@example.com,fab123,USER
+45,Emma Lefèvre,emma,emma@example.com,emma987,ADMIN
+46,Nathan Picard,nathan,nathan@example.com,pic123,USER
+47,Inès Roy,ines,ines@example.com,roy456,CONTRIBUTOR
+48,Arthur Merlin,arthur,arthur@example.com,merlin7,USER
+49,Camille Petit,camille,camille@example.com,cam22,USER
+50,Léa Giraud,lea,lea@example.com,giraud9,CONTRIBUTOR
+51,Théo Dumas,theo,theo@example.com,theo123,USER
+52,Amandine Clément,amandine,amandine@example.com,clem789,USER
+53,Rayan Mezni,rayan,rayan@example.com,ry456,ADMIN
+54,Salma Chahed,salma,salma@example.com,salma!23,CONTRIBUTOR
+55,Mehdi Bensaid,mehdi,mehdi@example.com,med123,USER
+56,Lina Amouri,lina,lina@example.com,lina456,USER
+57,Walid Haddad,walid,walid@example.com,wal789,USER
+58,Yasmin Ghali,yasmin,yasmin@example.com,ghali001,CONTRIBUTOR
+59,Ilyes Nouri,ilyes,ilyes@example.com,ilyes@123,USER
+60,Mariam Kacem,mariam,mariam@example.com,mk123,ADMIN
