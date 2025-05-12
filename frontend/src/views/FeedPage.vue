@@ -141,6 +141,10 @@
             <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-emerald-500 mx-auto"></div>
           </div>
 
+          <div v-if="feedStore.error" class="text-red-500 text-center py-4">
+            {{ feedStore.error }}
+          </div>
+
           <div class="space-y-6">
             <div v-for="post in posts" :key="post.id" 
               class="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700 overflow-hidden"
@@ -152,7 +156,7 @@
                   <div class="flex-shrink-0">
                     <img 
                       v-if="post.author.avatarUrl" 
-                      :src="post.author.avatarUrl" 
+                      :src="getAuthorAvatar(post.author)" 
                       alt="Author Avatar"
                       class="w-12 h-12 rounded-full object-cover border-2 border-slate-800"
                     >
@@ -362,13 +366,27 @@
       ? `${apiUrl}${user.value.avatarUrl}`
       : '';
   });
-  
+
   // User initials
   const userInitials = computed(() => {
     return user.value?.name
       ? user.value.name.split(' ').map(n => n[0]).join('').toUpperCase()
       : '';
   });
+
+  const getAuthorAvatar = (author: any) => {
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+    const rawUrl = author?.avatarUrl;
+
+    if (!rawUrl) return '';
+
+    // Avoid duplicating the base URL if already absolute
+    if (rawUrl.startsWith('http')) {
+      return rawUrl;
+    }
+
+    return `${apiUrl}${rawUrl}`;
+  };
   
   // Quick stats
   const quickStats = computed(() => ({
@@ -394,13 +412,13 @@
   
   
 
-  const getTopReactions = (post: any) => {
+  const getTopReactions = (post: Post) => {
     return post.reactions
       .sort((a: any, b: any) => b.count - a.count)
       .slice(0, 3);
   };
 
-  const getTotalReactions = (post: any) => {
+  const getTotalReactions = (post: Post) => {
     return post.reactions.reduce((total: number, reaction: any) => total + reaction.count, 0);
   };
 
@@ -424,7 +442,7 @@
     }, 300);
   };
 
-  const showReactionPicker = (post: any, event?: MouseEvent) => {
+  const showReactionPicker = (post: Post, event?: MouseEvent) => {
     if (event) {
       const rect = (event.target as HTMLElement).getBoundingClientRect();
       reactionPickerPosition.value = {
@@ -435,12 +453,12 @@
     showReactionPickerFor.value = post.id;
   };
 
-  const hasReacted = (post: any, emoji: string) => {
+  const hasReacted = (post: Post, emoji: string) => {
     const reaction = post.reactions.find((r: any) => r.emoji === emoji);
     return reaction?.users.includes('user1');
   };
 
-  const addReaction = (post: any, emoji: string) => {
+  const addReaction = (post: Post, emoji: string) => {
     let reaction = post.reactions.find((r: any) => r.emoji === emoji);
     if (reaction) {
       if (reaction.users.includes('user1')) {
@@ -486,7 +504,7 @@
   
   
   // Post management actions
-  const editPost = (post: any) => {
+  const editPost = (post: Post) => {
     activePostMenu.value = null;
     notificationStore.addNotification({
       type: 'system',
@@ -495,7 +513,7 @@
     });
   };
 
-  const savePost = (post: any) => {
+  const savePost = (post: Post) => {
     activePostMenu.value = null;
     notificationStore.addNotification({
       type: 'system',
@@ -504,11 +522,11 @@
     });
   };
 
-  const sharePost = (post: any) => {
+  const sharePost = (post: Post) => {
     activePostMenu.value = null;
   };
 
-  const reportPost = (post: any) => {
+  const reportPost = (post: Post) => {
     activePostMenu.value = null;
     notificationStore.addNotification({
       type: 'system',
@@ -517,7 +535,7 @@
     });
   };
 
-  const deletePost = (post: any) => {
+  const deletePost = (post: Post) => {
     activePostMenu.value = null;
     notificationStore.addNotification({
       type: 'system',
@@ -526,7 +544,7 @@
     });
   };
 
-  const toggleFavorite = (post: any) => {
+  const toggleFavorite = (post: Post) => {
     post.isFavorite = !post.isFavorite;
     notificationStore.addNotification({
       type: 'system',
@@ -536,7 +554,7 @@
   };
   
   // Create post handler
-  const handleCreatePost = async (postData: any) => {
+  const handleCreatePost = async (postData: Post) => {
     try {
       await feedStore.createPost({
         content: postData.content,
@@ -571,10 +589,17 @@
   };
 
   const fetchPostsIfNeeded = () => {
-    if (user.value) {
+    if (!user.value) {
+      const interval = setInterval(() => {
+        if (user.value) {
+          clearInterval(interval);
+          feedStore.fetchPosts();
+        }
+      }, 200);
+    } else {
       feedStore.fetchPosts();
     }
-  }
+  };
 
   
   onMounted(() => {

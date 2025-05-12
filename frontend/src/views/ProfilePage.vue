@@ -262,6 +262,7 @@ import type { UserRole } from '../types/UserRole';
       ? user.value.name.split(' ').map(n => n[0]).join('').toUpperCase()
       : '';
   });
+  
 
   // Role badge styling
   const roleBadgeContainerStyle = computed(() => {

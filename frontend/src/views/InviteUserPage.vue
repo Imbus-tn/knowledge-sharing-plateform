@@ -31,7 +31,21 @@
             <label class="block text-sm font-medium text-slate-300 mb-2">
               User Role
             </label>
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-3 gap-4">
+              <button
+                type="button"
+                @click="formData.role = UserRole.ADMIN"
+                class="p-4 border rounded-lg text-left"
+                :class="formData.role === UserRole.ADMIN 
+                  ? 'border-emerald-500 bg-emerald-500/10 text-white' 
+                  : 'border-slate-600 bg-slate-700/50 text-slate-300 hover:border-slate-500'"
+              >
+                <div class="flex items-center mb-2">
+                  <Shield class="w-5 h-5 mr-2" />
+                  <span class="font-medium">Admin</span>
+                </div>
+                <p class="text-sm text-slate-400">Full access to manage users and settings</p>
+              </button>
               <button
                 type="button"
                 @click="formData.role = UserRole.CONTRIBUTOR"
@@ -135,7 +149,7 @@
   
   <script setup lang="ts">
   import { ref, reactive, onMounted, computed } from 'vue';
-  import { Mail, User, Edit3, Send } from 'lucide-vue-next';
+  import { Mail, User, Edit3,Shield, Send } from 'lucide-vue-next';
   import { useNotificationStore } from '../stores/notification';
   import { useInvitationStore } from '../stores/invitation';
   import { UserRole } from '../types/UserRole';

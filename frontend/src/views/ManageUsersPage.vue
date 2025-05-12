@@ -36,53 +36,98 @@
         </div>
       </div>
 
-      <!-- User List Container -->
-      <div class="bg-slate-800/50 border border-slate-700 rounded-lg p-6">
-        <!-- Check if paginatedUsers is empty -->
-        <div v-if="paginatedUsers.length === 0" class="text-slate-400 text-center py-4">
-          No users found
-        </div>
-        <div v-else class="space-y-4">
-          <div 
-            v-for="user in paginatedUsers" 
-            :key="user.id"
-            class="bg-slate-800/50 border border-slate-700 p-4 rounded-lg flex items-center justify-between transition-shadow hover:shadow-md"
-          >
-            <!-- User Info -->
-            <div class="flex items-center space-x-4">
-              <div class="w-12 h-12 rounded-full overflow-hidden border border-slate-700">
-                <img v-if="avatarUrl(user)" :src="avatarUrl(user)" class="w-full h-full object-cover">
-                <div v-else class="w-full h-full bg-emerald-500 flex items-center justify-center">
-                  <span class="text-white text-lg">{{ initials(user) }}</span>
+      <!-- User Table -->
+      <div class="bg-slate-800/50 backdrop-blur-sm rounded-lg border border-slate-700 overflow-hidden">
+        <table class="w-full border-separate border-spacing-0">
+          <thead>
+            <tr class="text-left text-xs font-medium uppercase tracking-wider text-slate-400 bg-slate-700">
+              <th class="px-6 py-3 text-white border-b border-slate-600/50">#</th>
+              <th class="px-6 py-3 text-white border-b border-slate-600/50">Name</th>
+              <th class="px-6 py-3 text-white border-b border-slate-600/50">Email</th>
+              <th class="px-6 py-3 text-white border-b border-slate-600/50">Role</th>
+              <th class="px-6 py-3 text-white border-b border-slate-600/50">Status</th>
+              <th class="px-6 py-3 text-white border-b border-slate-600/50">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr 
+              v-for="(user, index) in paginatedUsers" 
+              :key="user.id"
+              class="hover:bg-slate-700/50 transition-colors"
+            >
+              <!-- ID -->
+              <td class="px-6 py-4 whitespace-nowrap text-white border-b border-slate-600">{{ index + 1 }}</td>
+              
+              <!-- Name -->
+              <td class="px-6 py-4 whitespace-nowrap text-white border-b border-slate-600 flex items-center space-x-2">
+                <img 
+                  :src="avatarUrl(user)" 
+                  alt="User Avatar" 
+                  class="w-8 h-8 rounded-full object-cover"
+                  v-if="user.avatarUrl"
+                />
+                <div 
+                  v-else 
+                  class="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center border border-slate-600/50"
+                >
+                  <span class="text-white font-medium text-xs">{{ initials(user) }}</span>
                 </div>
-              </div>
-              <div>
-                <p class="text-slate-300 font-medium">{{ user.name }}</p>
-                <p class="text-slate-400 text-sm">{{ user.email }}</p>
-                <div class="mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs" :class="roleStyle(user.role)">
-                  {{ user.role.toLowerCase() }}
-                </div>
-              </div>
-            </div>
+                <span class="text-white">{{ user.name }}</span>
+              </td>
+              
+              <!-- Email -->
+              <td class="px-6 py-4 whitespace-nowrap text-white border-b border-slate-600">{{ user.email }}</td>
+              
+              <!-- Role -->
+              <td class="px-6 py-4 whitespace-nowrap text-white border-b border-slate-600">
+                <span 
+                  class="inline-flex items-center px-2 py-0.5 rounded-full text-xs"
+                >
+                  {{ user.role }}
+                </span>
+              </td>
 
-            <!-- Actions -->
-            <div class="flex items-center space-x-3">
-              <router-link 
-                :to="{ name: 'update-user-role', params: { userId: user.id } }"
-                class="text-slate-400 hover:text-slate-300 transition-colors"
-                title="Edit Role"
-              >
-                <Edit3 class="w-5 h-5" />
-              </router-link>
-              <button @click="openDeleteModal(user.id)" class="text-red-500 hover:text-red-600" title="Delete User">
-                <Trash2 class="w-5 h-5" />
-              </button>
-              <button @click="openWarningModal(user.id)" class="text-yellow-500 hover:text-yellow-600" title="Send Warning">
-                <AlertCircle class="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-        </div>
+              <!-- Status -->
+              <td class="px-6 py-4 whitespace-nowrap text-white border-b border-slate-600">
+                <div class="flex items-center space-x-2">
+                  <span 
+                    class="w-3 h-3 rounded-full"
+                    :class="statusDotClass(user)"
+                  ></span>
+                  <span>{{ getStatusLabel(user) }}</span>
+                </div>
+              </td>
+
+              <!-- Actions -->
+              <td class="px-6 py-4 whitespace-nowrap border-b border-slate-600">
+                <div class="flex items-center space-x-3">
+                  <router-link 
+                    :to="{ name: 'update-user-role', params: { userId: user.id } }"
+                    class="text-emerald-500 hover:text-emerald-500 transition-colors"
+                    title="Edit Role"
+                  >
+                    <Edit3 class="w-5 h-5" />
+                  </router-link>
+                  <button 
+                    @click="openDeleteModal(user.id)" 
+                    class="text-red-500 hover:text-red-400 transition-colors"
+                    title="Delete User"
+                  >
+                    <Trash2 class="w-5 h-5" />
+                  </button>
+                  <button 
+                    @click="openWarningModal(user.id)" 
+                    class="text-yellow-500 hover:text-yellow-400 transition-colors"
+                    title="Send Warning"
+                  >
+                    <AlertCircle class="w-5 h-5" />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
         <!-- Pagination Controls -->
         <div class="flex justify-center mt-6 space-x-4">
@@ -119,7 +164,6 @@
         @submit="sendWarning"
         @cancel="closeWarningModal"
       />
-    </div>
   </template>
   
   <script setup>
@@ -234,7 +278,7 @@
   });
 
   // Roles for filters
-  const roles = ['All', 'user', 'contributor'];
+  const roles = ['All', 'admin', 'contributor', 'user'];
 
   // Open Delete Modal
   const openDeleteModal = (userId) => {
@@ -311,19 +355,22 @@
       ? `${apiUrl}${user.avatarUrl}` 
       : '';
   };
-  
+
   // Initials helper
   const initials = (user) => {
-    return user.name
-      ? user.name.split(' ').map(n => n[0]).join('').toUpperCase()
-      : '';
+    return user.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase() : ''
   };
-  
-  // Role styling helper
-  const roleStyle = (role) => {
+
+  // Compute status label
+  const getStatusLabel = (user) => {
+    return user.status || 'Offline';
+  };
+
+  const statusDotClass = (user) => {
     return {
-      'bg-orange-500/10 text-orange-500': role === 'CONTRIBUTOR',
-      'bg-blue-500/10 text-blue-500': role === 'USER'
+      'bg-emerald-500': user.status === 'Online',
+      'bg-red-500': user.status === 'Offline'
     };
   };
+
   </script>

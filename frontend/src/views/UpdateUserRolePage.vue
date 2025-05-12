@@ -39,37 +39,58 @@
             <label class="block text-sm font-medium text-slate-300 mb-2">
               User Role
             </label>
-            <div class="grid grid-cols-2 gap-4">
-              <button
-                type="button"
-                @click="selectedRole = 'CONTRIBUTOR'"
-                class="p-4 border rounded-lg text-left"
-                :class="selectedRole === 'CONTRIBUTOR' 
-                  ? 'border-emerald-500 bg-emerald-500/10 text-white' 
-                  : 'border-slate-600 bg-slate-700/50 text-slate-300 hover:border-slate-500'"
-              >
-                <div class="flex items-center mb-2">
-                  <Edit3 class="w-5 h-5 mr-2" />
-                  <span class="font-medium">Contributor</span>
-                </div>
-                <p class="text-sm text-slate-400">Can create and publish content, participate in discussions</p>
-              </button>
-  
-              <button
-                type="button"
-                @click="selectedRole = 'USER'"
-                class="p-4 border rounded-lg text-left"
-                :class="selectedRole === 'USER' 
-                  ? 'border-emerald-500 bg-emerald-500/10 text-white' 
-                  : 'border-slate-600 bg-slate-700/50 text-slate-300 hover:border-slate-500'"
-              >
-                <div class="flex items-center mb-2">
-                  <User class="w-5 h-5 mr-2" />
-                  <span class="font-medium">User</span>
-                </div>
-                <p class="text-sm text-slate-400">Can view content and participate in discussions</p>
-              </button>
-            </div>
+            <div class="grid grid-cols-3 gap-4">
+            <!-- Admin Role -->
+            <button
+              type="button"
+              @click="selectedRole = 'ADMIN'"
+              class="p-4 border rounded-lg text-left"
+              :class="{
+                'border-emerald-500 bg-emerald-500/10 text-white': selectedRole === 'ADMIN',
+                'border-slate-600 bg-slate-700/50 text-slate-300 hover:border-slate-500': selectedRole !== 'ADMIN'
+              }"
+            >
+              <div class="flex items-center mb-2">
+                <Shield class="w-5 h-5 mr-2" />
+                <span class="font-medium">Admin</span>
+              </div>
+              <p class="text-sm text-slate-400">Full access to manage users and settings</p>
+            </button>
+
+            <!-- Contributor Role -->
+            <button
+              type="button"
+              @click="selectedRole = 'CONTRIBUTOR'"
+              class="p-4 border rounded-lg text-left"
+              :class="{
+                'border-emerald-500 bg-emerald-500/10 text-white': selectedRole === 'CONTRIBUTOR',
+                'border-slate-600 bg-slate-700/50 text-slate-300 hover:border-slate-500': selectedRole !== 'CONTRIBUTOR'
+              }"
+            >
+              <div class="flex items-center mb-2">
+                <Edit3 class="w-5 h-5 mr-2" />
+                <span class="font-medium">Contributor</span>
+              </div>
+              <p class="text-sm text-slate-400">Can create and publish content, participate in discussions</p>
+            </button>
+
+            <!-- User Role -->
+            <button
+              type="button"
+              @click="selectedRole = 'USER'"
+              class="p-4 border rounded-lg text-left"
+              :class="{
+                'border-emerald-500 bg-emerald-500/10 text-white': selectedRole === 'USER',
+                'border-slate-600 bg-slate-700/50 text-slate-300 hover:border-slate-500': selectedRole !== 'USER'
+              }"
+            >
+              <div class="flex items-center mb-2">
+                <User class="w-5 h-5 mr-2" />
+                <span class="font-medium">User</span>
+              </div>
+              <p class="text-sm text-slate-400">Can view content and participate in discussions</p>
+            </button>
+          </div>
           </div>
   
           <!-- Custom Message -->
@@ -111,7 +132,7 @@
   import { useRouter } from 'vue-router';
   import { useAuthStore } from '../stores/auth';
   import { apiClient } from '../api';
-  import { Mail, Edit3, User } from 'lucide-vue-next';
+  import { Mail, Edit3, User, Shield } from 'lucide-vue-next';
 
   const router = useRouter();
   const authStore = useAuthStore();
