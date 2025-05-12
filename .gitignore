@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+
+# Virtual environments
+.venv/
+venv/
+
+# Model files and caches
+*.h5
+*.pkl
+*.pt
+*.joblib
+model_cache/
+
+# VSCode and OS metadata
+.vscode/
+.DS_Store
