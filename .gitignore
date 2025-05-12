@@ -1,19 +1,20 @@
-# Python
-__pycache__/
-*.py[cod]
-*.so
-
-# Virtual environments
-.venv/
+# Ignore virtual environments
 venv/
+.venv/
 
-# Model files and caches
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Model files and checkpoints (if any)
 *.h5
 *.pkl
-*.pt
-*.joblib
 model_cache/
 
-# VSCode and OS metadata
-.vscode/
+# Optional: exclude local CSV data files
+content_recommender/data/*.csv
+feed_recommender/data/*.csv
+
+# System files
 .DS_Store
