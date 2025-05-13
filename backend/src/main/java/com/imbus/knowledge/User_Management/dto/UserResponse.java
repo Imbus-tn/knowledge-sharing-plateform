@@ -17,6 +17,7 @@ public class UserResponse {
     private UserRole role;
     private LocalDateTime lastLogin;
     private String status;
+    private boolean enabled;
     private String bio;
     private String location;
     private String phoneNumber;
@@ -32,6 +33,7 @@ public class UserResponse {
         response.setRole(user.getRole());
         response.setLastLogin(user.getLastLogin());
         response.setStatus(computeStatus(user.getLastLogin()));
+        response.setEnabled(user.isEnabled());
         response.setBio(user.getBio());
         response.setLocation(user.getLocation());
         response.setPhoneNumber(user.getPhoneNumber());

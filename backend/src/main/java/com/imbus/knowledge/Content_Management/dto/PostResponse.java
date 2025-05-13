@@ -1,7 +1,6 @@
 package com.imbus.knowledge.Content_Management.dto;
 
 import com.imbus.knowledge.Content_Management.entities.Post;
-import com.imbus.knowledge.User_Management.entities.User;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -31,26 +30,13 @@ public class PostResponse {
         response.imageUrl = post.getImageUrl();
         response.author = AuthorDto.from(post.getAuthor());
         response.createdAt = post.getCreatedAt();
-        response.commentCount = post.getComments().size();
-        response.reactionCount = post.getReactions().size();
+
+        // Null-safe access
+        response.commentCount = post.getComments() != null ? post.getComments().size() : 0;
+        response.reactionCount = post.getReactions() != null ? post.getReactions().size() : 0;
+
         // Set isFavorite based on current user
         return response;
     }
 
-    // Inner class for author info
-    public static class AuthorDto {
-        private Long id;
-        private String name;
-        private String initials;
-        private String avatarUrl;
-
-        public static AuthorDto from(User user) {
-            AuthorDto dto = new AuthorDto();
-            dto.id = user.getId();
-            dto.name = user.getName();
-            dto.initials = user.getUsername().substring(0, 2); // First two letters
-            dto.avatarUrl = user.getAvatarUrl();
-            return dto;
-        }
-    }
 }

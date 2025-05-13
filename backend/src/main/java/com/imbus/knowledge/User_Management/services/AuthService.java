@@ -117,6 +117,7 @@ public class AuthService {
                 .email(email)
                 .password(passwordEncoder.encode(password))
                 .role(role)
+                .enabled(true)
                 .build();
 
         userRepository.save(user);
@@ -271,5 +272,13 @@ public class AuthService {
         } catch (Exception e) {
             throw new RuntimeException("Avatar upload failed: " + e.getMessage(), e);
         }
+    }
+
+    public void toggleUserStatus(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setEnabled(!user.isEnabled());
+        userRepository.save(user);
     }
 }

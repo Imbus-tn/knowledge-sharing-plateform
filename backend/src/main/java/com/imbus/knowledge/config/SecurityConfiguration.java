@@ -75,7 +75,7 @@ public class SecurityConfiguration implements WebMvcConfigurer {
     public CorsConfigurationSource corsConfigurationSource(){
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of("http://localhost:5173")); // Allow your frontend origin
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true); // Required for cookies/authorization headers
         config.setMaxAge(3600L); // Cache preflight response for 1 hour

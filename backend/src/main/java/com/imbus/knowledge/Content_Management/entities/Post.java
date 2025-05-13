@@ -1,5 +1,7 @@
 package com.imbus.knowledge.Content_Management.entities;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.imbus.knowledge.User_Management.entities.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -30,7 +32,9 @@ public class Post {
 
     private String imageUrl;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "author_id")
+    @JsonManagedReference
     @OnDelete(action = OnDeleteAction.CASCADE)
     private User author;
 
@@ -39,12 +43,14 @@ public class Post {
 
     // Relationships
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Reaction> reactions = new ArrayList<>();
+    @JsonBackReference
+    private Set<Reaction> reactions = new HashSet<>();
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Favorite> favorites = new HashSet<>();
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonBackReference
     private List<Comment> comments = new ArrayList<>();
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)

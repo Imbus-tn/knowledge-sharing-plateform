@@ -1,9 +1,6 @@
 package com.imbus.knowledge.Content_Management.services;
 
-import com.imbus.knowledge.Content_Management.dto.CreatePostRequest;
-import com.imbus.knowledge.Content_Management.dto.CommentRequest;
-import com.imbus.knowledge.Content_Management.dto.ReactionRequest;
-import com.imbus.knowledge.Content_Management.dto.ReportRequest;
+import com.imbus.knowledge.Content_Management.dto.*;
 import com.imbus.knowledge.Content_Management.entities.*;
 import com.imbus.knowledge.Content_Management.exception.PostNotFoundException;
 import com.imbus.knowledge.Content_Management.repositories.*;
@@ -31,7 +28,7 @@ public class PostService {
 
     // ===== POST CRUD =====
 
-    public Post createPost(CreatePostRequest request, Long userId) {
+    public PostResponse createPost(CreatePostRequest request, Long userId) {
         User author = getUserById(userId);
 
         Post post = new Post();
@@ -40,20 +37,27 @@ public class PostService {
         post.setAuthor(author);
         post.setCreatedAt(LocalDateTime.now());
 
-        return postRepository.save(post);
+        Post savedPost = postRepository.save(post);
+        return PostResponse.from(savedPost); // Map to DTO
     }
 
-    public Post getPostById(Long postId) {
+    private Post getPostEntityById(Long postId) {
         return postRepository.findById(postId)
                 .orElseThrow(() -> new PostNotFoundException(postId));
     }
 
-    public Page<Post> getAllPosts(int page, int size) {
-        return postRepository.findAll(PageRequest.of(page, size));
+    public PostResponse getPostById(Long postId) {
+        Post post = getPostEntityById(postId);
+        return PostResponse.from(post);
     }
 
-    public Post updatePost(Long postId, CreatePostRequest request, Long userId) {
-        Post post = getPostById(postId);
+    public Page<PostResponse> getAllPosts(int page, int size) {
+        return postRepository.findAllWithDetails(PageRequest.of(page, size))
+                .map(PostResponse::from);
+    }
+
+    public PostResponse updatePost(Long postId, CreatePostRequest request, Long userId) {
+        Post post = getPostEntityById(postId);
         if (!post.getAuthor().getId().equals(userId)) {
             throw new SecurityException("You are not authorized to update this post.");
         }
@@ -62,11 +66,11 @@ public class PostService {
         post.setImageUrl(request.getImageUrl());
         post.setUpdatedAt(LocalDateTime.now());
 
-        return postRepository.save(post);
+        return PostResponse.from(postRepository.save(post)); // Map to DTO
     }
 
     public void deletePost(Long postId, Long userId) {
-        Post post = getPostById(postId);
+        Post post = getPostEntityById(postId);
         if (!post.getAuthor().getId().equals(userId)) {
             throw new SecurityException("You are not authorized to delete this post.");
         }
@@ -77,7 +81,7 @@ public class PostService {
     // ===== INTERACTIONS =====
 
     public void toggleFavorite(Long postId, Long userId) {
-        Post post = getPostById(postId);
+        Post post = getPostEntityById(postId);
         User user = getUserById(userId);
 
         boolean alreadyFavorited = favoriteRepository.existsByUserAndPost(user, post);
@@ -96,7 +100,7 @@ public class PostService {
 
     @Transactional
     public void reactToPost(Long postId, ReactionRequest request, Long userId) {
-        Post post = getPostById(postId);
+        Post post = getPostEntityById(postId);
         User user = getUserById(userId);
 
         Reaction existingReaction = reactionRepository.findByUserAndPost(user, post);
@@ -115,7 +119,7 @@ public class PostService {
     }
 
     public void addCommentToPost(Long postId, CommentRequest request, Long userId) {
-        Post post = getPostById(postId);
+        Post post = getPostEntityById(postId);
         User user = getUserById(userId);
 
         Comment comment = new Comment();
@@ -162,7 +166,7 @@ public class PostService {
     }
 
     public void reportPost(Long postId, ReportRequest request, User reporter) {
-        Post post = getPostById(postId);
+        Post post = getPostEntityById(postId);
 
         ReportedPost reportedPost = new ReportedPost();
         reportedPost.setPost(post);
@@ -174,7 +178,7 @@ public class PostService {
     }
 
     public void sharePost(Long postId, Long userId) {
-        Post post = getPostById(postId);
+        Post post = getPostEntityById(postId);
         User user = getUserById(userId);
 
         Share share = new Share();

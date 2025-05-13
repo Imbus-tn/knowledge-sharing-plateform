@@ -1,7 +1,6 @@
 package com.imbus.knowledge.Content_Management.controller;
 
 import com.imbus.knowledge.Content_Management.dto.*;
-import com.imbus.knowledge.Content_Management.entities.Post;
 import com.imbus.knowledge.Content_Management.services.PostService;
 import com.imbus.knowledge.User_Management.entities.User;
 import com.imbus.knowledge.User_Management.security.UserDetailsImpl;
@@ -25,50 +24,35 @@ public class PostController {
     // ==== POST CRUD ====
 
     @PostMapping
-    public ResponseEntity<Post> createPost(
+    public ResponseEntity<PostResponse> createPost(
             @RequestBody CreatePostRequest request,
             @AuthenticationPrincipal UserDetailsImpl userDetails) {
         Long userId = getUserIdFromUserDetails(userDetails);
-        Post createdPost = postService.createPost(request, userId);
-
-        // Ensure all collections are initialized to empty (not null)
-        if (createdPost.getReactions() == null) {
-            createdPost.setReactions(new ArrayList<>());
-        }
-        if (createdPost.getComments() == null) {
-            createdPost.setComments(new ArrayList<>());
-        }
-        if (createdPost.getFavorites() == null) {
-            createdPost.setFavorites(new HashSet<>());
-        }
-        if (createdPost.getShares() == null) {
-            createdPost.setShares(new ArrayList<>());
-        }
-
+        PostResponse createdPost = postService.createPost(request, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdPost);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Post> getPost(@PathVariable Long id) {
-        Post post = postService.getPostById(id);
+    public ResponseEntity<PostResponse> getPost(@PathVariable Long id) {
+        PostResponse post = postService.getPostById(id);
         return ResponseEntity.ok(post);
     }
 
     @GetMapping
-    public ResponseEntity<Page<Post>> getAllPosts(
+    public ResponseEntity<Page<PostResponse>> getAllPosts(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        Page<Post> posts = postService.getAllPosts(page, size);
+        Page<PostResponse> posts = postService.getAllPosts(page, size);
         return ResponseEntity.ok(posts);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Post> updatePost(
+    public ResponseEntity<PostResponse> updatePost(
             @PathVariable Long id,
             @RequestBody CreatePostRequest request,
             @AuthenticationPrincipal UserDetailsImpl userDetails) {
         Long userId = getUserIdFromUserDetails(userDetails);
-        Post updatedPost = postService.updatePost(id, request, userId);
+        PostResponse updatedPost = postService.updatePost(id, request, userId);
         return ResponseEntity.ok(updatedPost);
     }
 

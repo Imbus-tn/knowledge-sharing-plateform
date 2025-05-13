@@ -1,5 +1,6 @@
 package com.imbus.knowledge.User_Management.entities;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,6 +27,8 @@ public class ForgotPassword {
     private Date expirationTime;
 
     @OneToOne
+    @JoinColumn(name = "user_id")
+    @JsonManagedReference
     private User user;
 
 }

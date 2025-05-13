@@ -1,6 +1,6 @@
 package com.imbus.knowledge.User_Management.entities;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
@@ -40,14 +40,18 @@ public class User implements UserDetails {
     private String avatarUrl;
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore // Prevent infinite recursion during JSON serialization
+    @JsonBackReference
     private RefreshToken refreshToken;
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonBackReference
     private ForgotPassword forgotPassword;
 
     @Enumerated(EnumType.STRING)
     private UserRole role;
+
+    @Column(name = "enabled", nullable = false)
+    private boolean enabled = true; // Default to active
 
     @Column(name = "last_login")
     private LocalDateTime lastLogin;
@@ -86,7 +90,7 @@ public class User implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return enabled;
     }
 
 

@@ -49,4 +49,9 @@ public interface UserRepository extends JpaRepository<User,Long> {
     @Modifying
     @Query("UPDATE User u SET u.lastLogin = ?2 WHERE u.id = ?1")
     void updateLastLogin(Long userId, LocalDateTime lastLogin);
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE User u SET u.enabled = :enabled WHERE u.id = :userId")
+    void updateUserStatus(@Param("userId") Long userId, @Param("enabled") boolean enabled);
 }

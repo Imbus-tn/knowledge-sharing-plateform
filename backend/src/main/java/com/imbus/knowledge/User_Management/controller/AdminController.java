@@ -16,7 +16,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -234,6 +236,35 @@ public class AdminController {
                 System.err.println("Failed to delete avatar: " + e.getMessage());
             }
         }
+    }
+
+    @PatchMapping("/users/{userId}/toggle-enable")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> toggleUserStatus(@PathVariable Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Prevent self-deactivation
+        if (user.getId().equals(getCurrentUserId())) {
+            throw new SecurityException("You cannot deactivate your own account");
+        }
+
+        // Toggle enabled status
+        user.setEnabled(!user.isEnabled());
+        userRepository.save(user);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    private Long getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication.isAuthenticated()) {
+            Object principal = authentication.getPrincipal();
+            if (principal instanceof UserDetailsImpl userDetails) {
+                return userDetails.getUser().getId();
+            }
+        }
+        throw new RuntimeException("No authenticated user found");
     }
 
     @PostMapping("/users/{userId}/warn")
