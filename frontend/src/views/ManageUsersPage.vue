@@ -92,9 +92,9 @@
                 <div class="flex items-center space-x-2">
                   <span 
                     class="w-3 h-3 rounded-full"
-                    :class="statusDotClass(user)"
+                    :class="user.enabled ? 'bg-emerald-500' : 'bg-red-500'"
                   ></span>
-                  <span>{{ getStatusLabel(user) }}</span>
+                  <span>{{ user.enabled ? 'Active' : 'Inactive' }}</span>
                 </div>
               </td>
 
@@ -103,21 +103,22 @@
                 <div class="flex items-center space-x-3">
                   <router-link 
                     :to="{ name: 'update-user-role', params: { userId: user.id } }"
-                    class="text-emerald-500 hover:text-emerald-500 transition-colors"
+                    class="text-gray-400 hover:text-gray-300 transition-colors"
                     title="Edit Role"
                   >
                     <Edit3 class="w-5 h-5" />
                   </router-link>
                   <button 
-                    @click="openDeleteModal(user.id)" 
-                    class="text-red-500 hover:text-red-400 transition-colors"
-                    title="Delete User"
+                    @click="toggleUserStatus(user.id)"
+                    class="transition-colors"
+                    :title="user.enabled ? 'Deactivate User' : 'Activate User'"
                   >
-                    <Trash2 class="w-5 h-5" />
+                    <UserCheck v-if="user.enabled" class="w-5 h-5 text-emerald-500 hover:text-emerald-400" />
+                    <UserX v-else class="w-5 h-5 text-red-500 hover:text-red-400" />
                   </button>
                   <button 
                     @click="openWarningModal(user.id)" 
-                    class="text-yellow-500 hover:text-yellow-400 transition-colors"
+                    class="text-amber-500 hover:text-amber-400 transition-colors"
                     title="Send Warning"
                   >
                     <AlertCircle class="w-5 h-5" />
@@ -151,11 +152,13 @@
 
       <!-- Modals -->
       <ConfirmModal
-        :is-open="isDeleteModalOpen"
-        title="Confirm Deletion"
-        message="Are you sure you want to delete this user? This action cannot be undone."
-        @confirm="deleteUser"
-        @cancel="closeDeleteModal"
+        :is-open="isStatusModalOpen"
+        :title="selectedUserId && users.value.find(u => u.id === selectedUserId)?.enabled ? 'Deactivate User' : 'Activate User'"
+        :message="selectedUserId && users.value.find(u => u.id === selectedUserId)?.enabled 
+          ? 'Are you sure you want to deactivate this user? They will no longer be able to log in.'
+          : 'Are you sure you want to activate this user? They will regain access to the system.'"
+        @confirm="confirmToggleStatus"
+        @cancel="closeStatusModal"
       />
       <PromptModal
         :is-open="isWarningModalOpen"
@@ -170,7 +173,7 @@
   import { ref, onMounted, computed, watch } from 'vue';
   import { useAuthStore } from '../stores/auth';
   import { useRouter, useRoute } from 'vue-router';
-  import { Trash2, AlertCircle, Edit3 } from 'lucide-vue-next';
+  import {  AlertCircle, Edit3 , UserCheck, UserX } from 'lucide-vue-next';
   import { MagnifyingGlassIcon } from '@heroicons/vue/20/solid';
   import { apiClient } from '../api';
   import ConfirmModal from '../components/ConfirmModal.vue';
@@ -292,27 +295,73 @@
     isDeleteModalOpen.value = false;
   };
   
-  // Delete user handler
-  const deleteUser = async () => {
+  const toggleUserStatus = async (userId) => {
     try {
-      await apiClient.delete(`/admin/users/${selectedUserId.value}`, {
+      await apiClient.patch(`/admin/users/${userId}/toggle-enable`, {}, {
         headers: { Authorization: `Bearer ${authStore.accessToken}` }
       });
-      users.value = users.value.filter(u => u.id !== selectedUserId.value);
+
+      // Update local user list
+      const user = users.value.find(u => u.id === userId);
+      if (user) {
+        user.enabled = !user.enabled;
+      }
+
       router.push({ 
-        name: 'manage-users', 
-        query: { userDeleted: 'true' } 
+        name: 'manage-users',
+        query: { userUpdated: 'true' }
       });
     } catch (error) {
-      console.error('Failed to delete user:', error);
+      console.error('Failed to toggle user status:', error);
       router.push({ 
         name: 'manage-users', 
-        query: { error: 'Failed to delete user' }
+        query: { error: 'Failed to update user status' }
       });
-    } finally {
-      closeDeleteModal();
     }
   };
+
+  const getStatusLabel = (user) => {
+    return user.enabled ? 'Active' : 'Inactive';
+  };
+
+  const statusDotClass = (user) => {
+    return {
+      'bg-emerald-500': user.enabled,
+      'bg-red-500': !user.enabled
+    };
+  };
+
+  const isStatusModalOpen = ref(false);
+
+  const openStatusModal = (userId) => {
+    selectedUserId.value = userId;
+    isStatusModalOpen.value = true;
+  };
+
+  const closeStatusModal = () => {
+    selectedUserId.value = null;
+    isStatusModalOpen.value = false;
+  };
+
+const confirmToggleStatus = async () => {
+  await apiClient.patch(`/admin/users/${selectedUserId.value}/toggle-enable`, {}, {
+    headers: { Authorization: `Bearer ${authStore.accessToken}` }
+  });
+
+  // Update local state
+  const user = users.value.find(u => u.id === selectedUserId.value);
+  if (user) {
+    user.enabled = !user.enabled;
+  }
+
+  router.push({ 
+    name: 'manage-users', 
+    query: { userUpdated: 'true' }
+  });
+
+  closeStatusModal();
+};
+
 
   // Open Warning Modal
   const openWarningModal = (userId) => {
@@ -359,18 +408,6 @@
   // Initials helper
   const initials = (user) => {
     return user.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase() : ''
-  };
-
-  // Compute status label
-  const getStatusLabel = (user) => {
-    return user.status || 'Offline';
-  };
-
-  const statusDotClass = (user) => {
-    return {
-      'bg-emerald-500': user.status === 'Online',
-      'bg-red-500': user.status === 'Offline'
-    };
   };
 
   </script>

@@ -11,7 +11,7 @@
         </div>
 
         <!-- Center Section - Search -->
-        <div class="flex-1 flex items-center justify-center px-8">
+        <div class="flex-1 flex items-center justify-center px-8 " :class="{ 'opacity-0 pointer-events-none': !isActivePage('feed') }">
           <div class="relative w-full max-w-lg">
             <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
             <input
