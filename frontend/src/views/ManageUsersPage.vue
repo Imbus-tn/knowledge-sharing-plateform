@@ -109,12 +109,12 @@
                     <Edit3 class="w-5 h-5" />
                   </router-link>
                   <button 
-                    @click="toggleUserStatus(user.id)"
+                    @click="openStatusModal(user.id)"
                     class="transition-colors"
                     :title="user.enabled ? 'Deactivate User' : 'Activate User'"
                   >
-                    <UserCheck v-if="user.enabled" class="w-5 h-5 text-emerald-500 hover:text-emerald-400" />
-                    <UserX v-else class="w-5 h-5 text-red-500 hover:text-red-400" />
+                    <UserRoundCheck v-if="user.enabled" class="w-5 h-5 text-emerald-500 hover:text-emerald-400" />
+                    <UserRoundX v-else class="w-5 h-5 text-red-500 hover:text-red-400" />
                   </button>
                   <button 
                     @click="openWarningModal(user.id)" 
@@ -153,8 +153,8 @@
       <!-- Modals -->
       <ConfirmModal
         :is-open="isStatusModalOpen"
-        :title="selectedUserId && users.value.find(u => u.id === selectedUserId)?.enabled ? 'Deactivate User' : 'Activate User'"
-        :message="selectedUserId && users.value.find(u => u.id === selectedUserId)?.enabled 
+        :title="selectedUser?.enabled ? 'Deactivate User' : 'Activate User'"
+        :message="selectedUser?.enabled 
           ? 'Are you sure you want to deactivate this user? They will no longer be able to log in.'
           : 'Are you sure you want to activate this user? They will regain access to the system.'"
         @confirm="confirmToggleStatus"
@@ -173,7 +173,7 @@
   import { ref, onMounted, computed, watch } from 'vue';
   import { useAuthStore } from '../stores/auth';
   import { useRouter, useRoute } from 'vue-router';
-  import {  AlertCircle, Edit3 , UserCheck, UserX } from 'lucide-vue-next';
+  import {  AlertCircle, Edit3 , UserRoundCheck, UserRoundX, X } from 'lucide-vue-next';
   import { MagnifyingGlassIcon } from '@heroicons/vue/20/solid';
   import { apiClient } from '../api';
   import ConfirmModal from '../components/ConfirmModal.vue';
@@ -186,8 +186,8 @@
   const showSuccessMessage = ref(false);
   const showErrorMessage = ref(false);
 
-  const isDeleteModalOpen = ref(false);
   const isWarningModalOpen = ref(false);
+  const isStatusModalOpen = ref(false);
   const selectedUserId = ref(null);
 
   // Search and Filter State
@@ -223,8 +223,9 @@
   // Success message text
   const successMessageText = computed(() => {
     if (route.query.roleUpdateSuccess === 'true') return 'User role updated successfully!';
-    if (route.query.userDeleted === 'true') return 'User deleted successfully!';
     if (route.query.warningSent === 'true') return 'Warning sent successfully!';
+    if (route.query.status === 'activated') return 'User activated successfully!';
+    if (route.query.status === 'deactivated') return 'User deactivated successfully!';
     return '';
   });
 
@@ -233,7 +234,10 @@
     () => route.query,
     (newQuery) => {
       // Show success message
-      if (['roleUpdateSuccess', 'userDeleted', 'warningSent'].some(key => newQuery[key] === 'true')) {
+      if (
+        ['roleUpdateSuccess', 'userDeleted', 'warningSent'].some(key => newQuery[key] === 'true') ||
+        ['activated', 'deactivated'].includes(newQuery.status)
+      ) {
         showSuccessMessage.value = true;
         setTimeout(() => {
           showSuccessMessage.value = false;
@@ -259,9 +263,17 @@
       const response = await apiClient.get('/admin/users', {
         headers: { Authorization: `Bearer ${authStore.accessToken}` }
       });
-      users.value = response.data;
+
+      // Ensure response.data is an array, fallback to empty array if not
+      if (Array.isArray(response.data)) {
+        users.value = response.data;
+      } else {
+        console.warn('API did not return an array of users:', response.data);
+        users.value = [];
+      }
     } catch (error) {
       console.error('Failed to fetch users:', error);
+      users.value = []; // Always fallback to empty array
       router.push({ 
         name: 'manage-users',
         query: { error: 'Failed to load user list' }
@@ -271,11 +283,10 @@
 
   // Computed property for filtered users
   const filteredUsers = computed(() => {
-    return users.value.filter((user) => {
-      // Match search query (case-insensitive)
+    const userList = Array.isArray(users.value) ? users.value : [];
+    return userList.filter((user) => {
       const matchesSearch = !searchQuery.value || user.name?.toLowerCase().includes(searchQuery.value.toLowerCase());
-      // Match role filter
-      const matchesRole = selectedRoleFilter.value === 'All' || user.role.toLowerCase() === selectedRoleFilter.value;
+      const matchesRole = selectedRoleFilter.value === 'All' || user.role?.toLowerCase() === selectedRoleFilter.value;
       return matchesSearch && matchesRole;
     });
   });
@@ -283,10 +294,21 @@
   // Roles for filters
   const roles = ['All', 'admin', 'contributor', 'user'];
 
-  // Open Delete Modal
-  const openDeleteModal = (userId) => {
-    selectedUserId.value = userId;
-    isDeleteModalOpen.value = true;
+  const selectedUser = computed(() => {
+    return users.value.find(u => u.id === selectedUserId.value);
+  });
+
+  // Open modal function
+  const openStatusModal = (userId) => {
+    // Ensure selectedUserId is a number
+    selectedUserId.value = Number(userId);
+    isStatusModalOpen.value = true;
+  };
+
+  // Close modal function
+  const closeStatusModal = () => {
+    selectedUserId.value = null;
+    isStatusModalOpen.value = false;
   };
 
   // Close Delete Modal
@@ -295,28 +317,33 @@
     isDeleteModalOpen.value = false;
   };
   
-  const toggleUserStatus = async (userId) => {
+  // Confirm action handler
+  const confirmToggleStatus = async () => {
     try {
-      await apiClient.patch(`/admin/users/${userId}/toggle-enable`, {}, {
+      // Get current status before update
+      const currentUser = users.value.find(u => u.id === selectedUserId.value);
+      const wasEnabled = currentUser?.enabled;
+
+      await apiClient.patch(`/admin/users/${selectedUserId.value}/toggle-enable`, {}, {
         headers: { Authorization: `Bearer ${authStore.accessToken}` }
       });
 
-      // Update local user list
-      const user = users.value.find(u => u.id === userId);
-      if (user) {
-        user.enabled = !user.enabled;
-      }
-
-      router.push({ 
-        name: 'manage-users',
-        query: { userUpdated: 'true' }
+      // Update local state
+      users.value = users.value.map(user => {
+        if (user.id === selectedUserId.value) {
+          return { ...user, enabled: !user.enabled };
+        }
+        return user;
       });
+
+      // Determine new status
+      const newStatus = wasEnabled ? 'deactivated' : 'activated';
+      router.push({ name: 'manage-users', query: { status: newStatus } });
     } catch (error) {
       console.error('Failed to toggle user status:', error);
-      router.push({ 
-        name: 'manage-users', 
-        query: { error: 'Failed to update user status' }
-      });
+      router.push({ name: 'manage-users', query: { error: 'Failed to update user status' } });
+    } finally {
+      closeStatusModal();
     }
   };
 
@@ -330,38 +357,6 @@
       'bg-red-500': !user.enabled
     };
   };
-
-  const isStatusModalOpen = ref(false);
-
-  const openStatusModal = (userId) => {
-    selectedUserId.value = userId;
-    isStatusModalOpen.value = true;
-  };
-
-  const closeStatusModal = () => {
-    selectedUserId.value = null;
-    isStatusModalOpen.value = false;
-  };
-
-const confirmToggleStatus = async () => {
-  await apiClient.patch(`/admin/users/${selectedUserId.value}/toggle-enable`, {}, {
-    headers: { Authorization: `Bearer ${authStore.accessToken}` }
-  });
-
-  // Update local state
-  const user = users.value.find(u => u.id === selectedUserId.value);
-  if (user) {
-    user.enabled = !user.enabled;
-  }
-
-  router.push({ 
-    name: 'manage-users', 
-    query: { userUpdated: 'true' }
-  });
-
-  closeStatusModal();
-};
-
 
   // Open Warning Modal
   const openWarningModal = (userId) => {
