@@ -1,8 +1,8 @@
 spring:
   datasource:
-    username: usere
-    password: Imbus@2025!
-    url: jdbc:mysql://localhost:3306/users
+    username: root
+    password: 08052001
+    url: jdbc:mysql://localhost:3306/chat1_db?createDatabaseIfNotExist=true&useSSL=false
   jpa:
     hibernate:
       ddl-auto: update
