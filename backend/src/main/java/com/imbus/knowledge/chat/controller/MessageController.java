@@ -2,7 +2,7 @@ package com.imbus.knowledge.chat.controller;
 
 
 import com.imbus.knowledge.chat.dto.MessageDto;
-import com.imbus.knowledge.chat.service.MessageService;
+import com.imbus.knowledge.chat.services.MessageService;  // Note the 'services' package
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -10,6 +10,7 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.List;
 
 @RestController

@@ -1,100 +1,58 @@
 package com.imbus.knowledge.chat.services;
 
-
-
 import com.imbus.knowledge.chat.dto.*;
 import com.imbus.knowledge.chat.entities.*;
-import com.imbus.knowledge.chat.exception.ChatNotFoundException;
+import com.imbus.knowledge.chat.exception.*;
 import com.imbus.knowledge.chat.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 @Service
 @RequiredArgsConstructor
-public class ChatService {
-    private final ChatRepository chatRepository;
-    private final UserRepository userRepository;
+public class ReactionService {
+    private final ReactionRepository reactionRepository;
     private final MessageRepository messageRepository;
+    private final UserRepository userRepository;
+    private final ChatRepository chatRepository;
 
     @Transactional
-    public ChatDto createChat(Set<Long> participantIds, String chatName) {
-        Chat chat = new Chat();
-        chat.setParticipants(userRepository.findAllByIdIn(participantIds));
-        chat.setCreatedAt(LocalDateTime.now());
-        chat.setLastActivity(LocalDateTime.now());
+    public ReactionDto addReaction(Long messageId, Long userId, String emoji) {
+        Message message = messageRepository.findById(messageId)
+                .orElseThrow(() -> new MessageNotFoundException(messageId));
 
-        if (participantIds.size() > 2) {
-            chat.setGroup(true);
-            chat.setName(chatName);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+
+        if (!chatRepository.existsByIdAndParticipantsId(message.getChat().getId(), userId)) {
+            throw new UnauthorizedReactionException();
         }
 
-        return convertToDto(chatRepository.save(chat));
+        // Remove existing reaction if exists
+        reactionRepository.deleteByMessageIdAndUserId(messageId, userId);
+
+        Reaction reaction = new Reaction();
+        reaction.setMessage(message);
+        reaction.setUser(user);
+        reaction.setEmoji(emoji);
+
+        Reaction savedReaction = reactionRepository.save(reaction);
+        return convertToDto(savedReaction);
     }
 
-    @Transactional(readOnly = true)
-    public List<ChatDto> getUserChats(Long userId) {
-        return chatRepository.findAllByParticipantId(userId).stream()
-                .map(this::convertToDtoWithUnreadCount)
-                .collect(Collectors.toList());
-    }
-
-    @Transactional(readOnly = true)
-    public ChatDto getChatById(Long chatId, Long userId) {
-        Chat chat = chatRepository.findById(chatId)
-                .orElseThrow(() -> new ChatNotFoundException("Chat not found with id: " + chatId));
-
-        if (!chat.getParticipants().stream().anyMatch(p -> p.getId().equals(userId))) {
-            throw new ChatNotFoundException("User is not a participant of this chat");
+    @Transactional
+    public void removeReaction(Long messageId, Long userId) {
+        if (!reactionRepository.existsByMessageIdAndUserId(messageId, userId)) {
+            throw new ReactionNotFoundException();
         }
-
-        return convertToDtoWithUnreadCount(chat);
+        reactionRepository.deleteByMessageIdAndUserId(messageId, userId);
     }
 
-    private ChatDto convertToDtoWithUnreadCount(Chat chat) {
-        ChatDto dto = convertToDto(chat);
-        dto.setUnreadCount(messageRepository.countUnreadMessages(chat.getId(),
-                chat.getParticipants().iterator().next().getId()));
-        return dto;
-    }
-
-    private ChatDto convertToDto(Chat chat) {
-        return ChatDto.builder()
-                .id(chat.getId())
-                .name(chat.getName())
-                .isGroup(chat.isGroup())
-                .participants(chat.getParticipants().stream()
-                        .map(this::convertToParticipantDto)
-                        .collect(Collectors.toSet()))
-                .createdAt(chat.getCreatedAt())
-                .lastActivity(chat.getLastActivity())
-                .lastMessage(chat.getMessages().isEmpty() ? null :
-                        convertToMessagePreviewDto(chat.getMessages().iterator().next()))
-                .build();
-    }
-
-    private ParticipantDto convertToParticipantDto(User user) {
-        return ParticipantDto.builder()
-                .id(user.getId())
-                .name(user.getName())
-                .initials(getInitials(user.getName()))
-                .avatarUrl(user.getAvatarUrl())
-                .online(user.isOnline())
-                .build();
-    }
-
-    private MessagePreviewDto convertToMessagePreviewDto(Message message) {
-        return MessagePreviewDto.builder()
-                .id(message.getId())
-                .preview(message.getContent().length() > 30 ?
-                        message.getContent().substring(0, 30) + "..." : message.getContent())
-                .sentAt(message.getSentAt())
-                .sender(convertToUserDto(message.getSender()))
+    private ReactionDto convertToDto(Reaction reaction) {
+        return ReactionDto.builder()
+                .id(reaction.getId())
+                .emoji(reaction.getEmoji())
+                .user(convertToUserDto(reaction.getUser()))
                 .build();
     }
 

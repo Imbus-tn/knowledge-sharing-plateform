@@ -1,7 +1,7 @@
 spring:
   datasource:
     username: root
-    password: 08052001
+    password: 080520001
     url: jdbc:mysql://localhost:3306/chat1_db?createDatabaseIfNotExist=true&useSSL=false
   jpa:
     hibernate:

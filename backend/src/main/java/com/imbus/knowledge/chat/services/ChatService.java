@@ -1,14 +1,9 @@
 package com.imbus.knowledge.chat.services;
 
-
-
 import com.imbus.knowledge.chat.dto.*;
-import com.imbus.knowledge.chat.entities.Chat;
-import com.imbus.knowledge.chat.entities.User;
+import com.imbus.knowledge.chat.entities.*;
 import com.imbus.knowledge.chat.exception.ChatNotFoundException;
-import com.imbus.knowledge.chat.repository.ChatRepository;
-import com.imbus.knowledge.chat.repository.MessageRepository;
-import com.imbus.knowledge.chat.repository.UserRepository;
+import com.imbus.knowledge.chat.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -62,7 +57,7 @@ public class ChatService {
     private ChatDto convertToDtoWithUnreadCount(Chat chat) {
         ChatDto dto = convertToDto(chat);
         dto.setUnreadCount(messageRepository.countUnreadMessages(chat.getId(),
-                chat.getParticipants().iterator().next().getId())); // Simplified
+                chat.getParticipants().iterator().next().getId()));
         return dto;
     }
 
