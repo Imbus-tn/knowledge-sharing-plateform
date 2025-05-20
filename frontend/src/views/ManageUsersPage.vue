@@ -1,35 +1,65 @@
   <template>
-    <div class="max-w-7xl mx-auto p-6">
-      <h1 class="text-2xl font-bold mb-6 text-slate-200">Manage Users</h1>
+    <div :class="[
+      'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8',
+      isDark ? 'text-slate-300' : 'text-slate-700'
+    ]">
+      <!-- Page Header -->
+      <div class="mb-8">
+        <h1 :class="[
+          'text-2xl font-bold mb-6',
+          isDark ? 'text-slate-200' : 'text-slate-900'
+        ]">
+          Manage Users
+        </h1>
 
-      <!-- Success/Error Messages -->
-      <div v-if="showSuccessMessage" 
-          class="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-lg flex justify-center">
-        <p class="text-emerald-500 text-sm text-center">{{ successMessageText }}</p>
-      </div>
-      <div v-if="showErrorMessage" 
-          class="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg flex justify-center">
-        <p class="text-red-500 text-sm text-center">{{ errorMessageText }}</p>
+        <!-- Success/Error Messages -->
+        <div v-if="showSuccessMessage" :class="[
+          'mb-6 p-4 rounded-lg flex justify-center',
+          isDark ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-500' : 'bg-emerald-100 border border-emerald-200 text-emerald-700'
+        ]">
+          {{ successMessageText }}
+        </div>
+
+        <div v-if="showErrorMessage" :class="[
+          'mb-6 p-4 rounded-lg flex justify-center',
+          isDark ? 'bg-red-500/10 border border-red-500/20 text-red-500' : 'bg-red-100 border border-red-200 text-red-700'
+        ]">
+          {{ errorMessageText }}
+        </div>
       </div>
 
       <!-- Search & Filters -->
       <div class="relative max-w-2xl mx-auto mb-8">
         <div class="relative">
-          <MagnifyingGlassIcon class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+          <MagnifyingGlassIcon :class="isDark ? 'text-slate-400' : 'text-slate-500'" class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5" />
           <input
             v-model="searchQuery"
             type="text"
             placeholder="Search for users..."
-            class="w-full pl-10 pr-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            :class="[
+              'w-full pl-10 pr-4 py-3 rounded-lg focus:outline-none focus:ring-2 transition-colors border-2 shadow-xl',
+              isDark 
+                ? 'bg-slate-700/50 border-slate-600 text-white placeholder-slate-400 focus:ring-emerald-500' 
+                : 'bg-slate-200/50 border-slate-300 text-slate-900 placeholder-slate-500 focus:ring-emerald-600'
+            ]"
           />
         </div>
+
+        <!-- Role Filters -->
         <div class="mt-4 flex justify-center space-x-4">
           <button
             v-for="role in roles"
             :key="role"
             @click="selectedRoleFilter = role"
-            class="px-4 py-2 rounded-full text-sm font-medium"
-            :class="selectedRoleFilter === role ? 'bg-emerald-500 text-white' : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600'"
+            :class="[
+              'px-4 py-2 rounded-full text-sm font-medium transition-colors border shadow-xl',
+              selectedRoleFilter === role 
+                ? (isDark ? 'bg-emerald-500 text-white' : 'bg-emerald-500 text-white') 
+                : (isDark 
+                    ? 'bg-slate-700/50 border-slate-700 text-slate-300 hover:bg-slate-600/50' 
+                    : 'bg-slate-100/50 border-slate-300 text-slate-600 hover:bg-slate-200/50'
+                  )
+            ]"
           >
             {{ role }}
           </button>
@@ -37,88 +67,169 @@
       </div>
 
       <!-- User Table -->
-      <div class="bg-slate-800/50 backdrop-blur-sm rounded-lg border border-slate-700 overflow-hidden">
+      <div :class="[
+        'backdrop-blur-sm rounded-lg border overflow-hidden shadow-xl',
+        isDark 
+          ? 'bg-slate-800/50 border-slate-700' 
+          : 'bg-slate-100/50 border-slate-200'
+      ]">
         <table class="w-full border-separate border-spacing-0">
           <thead>
-            <tr class="text-left text-xs font-medium uppercase tracking-wider text-slate-400 bg-slate-700">
-              <th class="px-6 py-3 text-white border-b border-slate-600/50">#</th>
-              <th class="px-6 py-3 text-white border-b border-slate-600/50">Name</th>
-              <th class="px-6 py-3 text-white border-b border-slate-600/50">Email</th>
-              <th class="px-6 py-3 text-white border-b border-slate-600/50">Role</th>
-              <th class="px-6 py-3 text-white border-b border-slate-600/50">Status</th>
-              <th class="px-6 py-3 text-white border-b border-slate-600/50">Actions</th>
+            <tr :class="isDark ? 'text-left text-xs font-medium uppercase tracking-wider bg-slate-700 text-slate-400' : 'text-left text-xs font-medium uppercase tracking-wider bg-slate-100 text-slate-500'">
+              <th :class="[
+                'px-6 py-3 whitespace-nowrap',
+                isDark ? 'text-white border-b border-slate-600' : 'text-slate-900 border-b border-slate-200'
+              ]">#</th>
+              <th :class="[
+                'px-6 py-3 whitespace-nowrap',
+                isDark ? 'text-white border-b border-slate-600' : 'text-slate-900 border-b border-slate-200'
+              ]">Name</th>
+              <th :class="[
+                'px-6 py-3 whitespace-nowrap',
+                isDark ? 'text-white border-b border-slate-600' : 'text-slate-900 border-b border-slate-200'
+              ]">Email</th>
+              <th :class="[
+                'px-6 py-3 whitespace-nowrap',
+                isDark ? 'text-white border-b border-slate-600' : 'text-slate-900 border-b border-slate-200'
+              ]">Role</th>
+              <th :class="[
+                'px-6 py-3 whitespace-nowrap',
+                isDark ? 'text-white border-b border-slate-600' : 'text-slate-900 border-b border-slate-200'
+              ]">Status</th>
+              <th :class="[
+                'px-6 py-3 whitespace-nowrap',
+                isDark ? 'text-white border-b border-slate-600' : 'text-slate-900 border-b border-slate-200'
+              ]">Actions</th>
             </tr>
           </thead>
           <tbody>
             <tr 
               v-for="(user, index) in paginatedUsers" 
               :key="user.id"
-              class="hover:bg-slate-700/50 transition-colors"
+              :class="isDark ? 'hover:bg-slate-700/50' : 'hover:bg-slate-200/70'"
+              class="transition-colors"
             >
               <!-- ID -->
-              <td class="px-6 py-4 whitespace-nowrap text-white border-b border-slate-600">{{ index + 1 }}</td>
-              
+              <td :class="[
+                'px-6 py-4 whitespace-nowrap',
+                isDark ? 'text-white border-b border-slate-600' : 'text-slate-900 border-b border-slate-200'
+              ]">
+                {{ index + 1 }}
+              </td>
+
               <!-- Name -->
-              <td class="px-6 py-4 whitespace-nowrap text-white border-b border-slate-600 flex items-center space-x-2">
+              <td :class="[
+                'px-6 py-4 whitespace-nowrap flex items-center space-x-2',
+                isDark ? 'text-white border-b border-slate-600' : 'text-slate-900 border-b border-slate-200'
+              ]">
                 <img 
+                  v-if="user.avatarUrl" 
                   :src="avatarUrl(user)" 
                   alt="User Avatar" 
                   class="w-8 h-8 rounded-full object-cover"
-                  v-if="user.avatarUrl"
                 />
                 <div 
                   v-else 
-                  class="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center border border-slate-600/50"
+                  :class="isDark ? 'bg-emerald-500 border-slate-600/50' : 'bg-emerald-500 border-slate-200/50'"
+                  class="w-8 h-8 rounded-full flex items-center justify-center border"
                 >
-                  <span class="text-white font-medium text-xs">{{ initials(user) }}</span>
+                  <span class="text-xs text-white font-medium">{{ initials(user) }}</span>
                 </div>
-                <span class="text-white">{{ user.name }}</span>
+                <span>{{ user.name }}</span>
               </td>
               
               <!-- Email -->
-              <td class="px-6 py-4 whitespace-nowrap text-white border-b border-slate-600">{{ user.email }}</td>
+              <td :class="[
+                'px-6 py-4 whitespace-nowrap',
+                isDark ? 'text-white border-b border-slate-600' : 'text-slate-900 border-b border-slate-200'
+              ]">
+                {{ user.email }}
+              </td>
               
               <!-- Role -->
-              <td class="px-6 py-4 whitespace-nowrap text-white border-b border-slate-600">
+              <td :class="[
+                'px-6 py-4 whitespace-nowrap',
+                isDark ? 'text-white border-b border-slate-600' : 'text-slate-900 border-b border-slate-200'
+              ]">
                 <span 
-                  class="inline-flex items-center px-2 py-0.5 rounded-full text-xs"
+                  class="inline-flex items-center px-2 py-0.5"
+                  :class="isDark ? 'text-white' : 'text-slate-900'"
                 >
-                  {{ user.role }}
+                  {{ user.role[0]+user.role.slice(1).toLowerCase() }}
                 </span>
               </td>
 
               <!-- Status -->
-              <td class="px-6 py-4 whitespace-nowrap text-white border-b border-slate-600">
+              <td :class="[
+                'px-6 py-4 whitespace-nowrap',
+                isDark ? 'text-white border-b border-slate-600' : 'text-slate-900 border-b border-slate-200'
+              ]">
                 <div class="flex items-center space-x-2">
                   <span 
                     class="w-3 h-3 rounded-full"
-                    :class="user.enabled ? 'bg-emerald-500' : 'bg-red-500'"
+                    :class="user.enabled ? (isDark ? 'bg-emerald-500' : 'bg-emerald-600') : (isDark ? 'bg-red-500' : 'bg-red-600')"
                   ></span>
                   <span>{{ user.enabled ? 'Active' : 'Inactive' }}</span>
                 </div>
               </td>
 
               <!-- Actions -->
-              <td class="px-6 py-4 whitespace-nowrap border-b border-slate-600">
-                <div class="flex items-center space-x-3">
+              <td :class="[
+                'px-6 py-4 whitespace-nowrap border-b',
+                isDark ? 'border-slate-600' : 'border-slate-200'
+              ]">
+                <div class="flex items-center space-x-2">
+                  <!-- Hidden Placeholder (Maintains spacing) -->
+                  <div v-if="user.role === UserRole.ADMIN" class="w-5 h-5 invisible"></div>
+
+                  <!-- Admin Lock Icon (Second Position) -->
+                  <div 
+                    v-if="user.role === UserRole.ADMIN"
+                    class="relative group"
+                    title="Admin actions are restricted"
+                  >
+                    <Lock 
+                      :class="isDark ? 'text-slate-400' : 'text-slate-500'" 
+                      class="w-5 h-5 cursor-help"
+                    />
+                  </div>
+
+                  <!-- Edit Role (Non-admin Only) -->
                   <router-link 
+                    v-if="user.role !== UserRole.ADMIN"
                     :to="{ name: 'update-user-role', params: { userId: user.id } }"
-                    class="text-gray-400 hover:text-gray-300 transition-colors"
+                    :class="[
+                      'text-sm transition-colors',
+                      isDark ? 'text-slate-400 hover:text-slate-300' : 'text-slate-500 hover:text-slate-600']"
                     title="Edit Role"
                   >
                     <Edit3 class="w-5 h-5" />
                   </router-link>
-                  <button 
+
+                  <!-- Deactivate / Activate (Non-admin Only) -->
+                  <button
+                    v-if="user.role !== UserRole.ADMIN"
                     @click="openStatusModal(user.id)"
-                    class="transition-colors"
                     :title="user.enabled ? 'Deactivate User' : 'Activate User'"
+                    class="transition-colors"
                   >
-                    <UserRoundCheck v-if="user.enabled" class="w-5 h-5 text-emerald-500 hover:text-emerald-400" />
-                    <UserRoundX v-else class="w-5 h-5 text-red-500 hover:text-red-400" />
+                    <component 
+                      :is="user.enabled ? UserRoundCheck : UserRoundX"
+                      :class="[
+                        'w-5 h-5',
+                        isDark 
+                          ? (user.enabled ? 'text-emerald-500 hover:text-emerald-400' : 'text-red-500 hover:text-red-400') 
+                          : (user.enabled ? 'text-emerald-600 hover:text-emerald-500' : 'text-red-600 hover:text-red-500')]"
+                    />
                   </button>
-                  <button 
+
+                  <!-- Send Warning (Non-admin Only) -->
+                  <button
+                    v-if="user.role !== UserRole.ADMIN"
                     @click="openWarningModal(user.id)" 
-                    class="text-amber-500 hover:text-amber-400 transition-colors"
+                    :class="[
+                      'transition-colors',
+                      isDark ? 'text-amber-500 hover:text-amber-400' : 'text-amber-600 hover:text-amber-500']"
                     title="Send Warning"
                   >
                     <AlertCircle class="w-5 h-5" />
@@ -130,27 +241,32 @@
         </table>
       </div>
 
-        <!-- Pagination Controls -->
-        <div class="flex justify-center mt-6 space-x-4">
-          <button
-            @click="prevPage"
-            :disabled="currentPage === 1"
-            class="px-4 py-2 bg-slate-700/50 text-slate-300 rounded-lg disabled:opacity-50"
-          >
-            Previous
-          </button>
-          <span class="text-slate-400">Page {{ currentPage }} of {{ totalPages }}</span>
-          <button
-            @click="nextPage"
-            :disabled="currentPage >= totalPages"
-            class="px-4 py-2 bg-slate-700/50 text-slate-300 rounded-lg disabled:opacity-50"
-          >
-            Next
-          </button>
-        </div>
+      <!-- Pagination -->
+      <div class="flex justify-center mt-6 space-x-4">
+        <button
+          @click="prevPage"
+          :disabled="currentPage === 1"
+          :class="[
+            'px-4 py-2 rounded-lg disabled:opacity-50 border',
+            isDark ? 'bg-slate-700/50 border-slate-700 text-slate-300 hover:bg-slate-600/50' : 'bg-slate-200/50 border-slate-300 text-slate-600 hover:bg-slate-300/50'
+          ]"
+        >
+          Previous
+        </button>
+        <span :class="isDark ? 'text-slate-400' : 'text-slate-500'">Page {{ currentPage }} of {{ totalPages }}</span>
+        <button
+          @click="nextPage"
+          :disabled="currentPage >= totalPages"
+          :class="[
+            'px-4 py-2 rounded-lg disabled:opacity-50 border',
+            isDark ? 'bg-slate-700/50 border-slate-700 text-slate-300 hover:bg-slate-600/50' : 'bg-slate-200/50 border-slate-300 text-slate-600 hover:bg-slate-300/50'
+          ]"
+        >
+          Next
+        </button>
       </div>
-
-      <!-- Modals -->
+    </div>
+    <!-- Modals -->
       <ConfirmModal
         :is-open="isStatusModalOpen"
         :title="selectedUser?.enabled ? 'Deactivate User' : 'Activate User'"
@@ -173,7 +289,9 @@
   import { ref, onMounted, computed, watch } from 'vue';
   import { useAuthStore } from '../stores/auth';
   import { useRouter, useRoute } from 'vue-router';
-  import {  AlertCircle, Edit3 , UserRoundCheck, UserRoundX, X } from 'lucide-vue-next';
+  import { UserRole } from '../types/UserRole';
+  import { useThemeStore } from '../stores/theme';
+  import {  AlertCircle, Edit3 , UserRoundCheck, UserRoundX, X, Lock } from 'lucide-vue-next';
   import { MagnifyingGlassIcon } from '@heroicons/vue/20/solid';
   import { apiClient } from '../api';
   import ConfirmModal from '../components/ConfirmModal.vue';
@@ -185,6 +303,9 @@
   const users = ref([]);
   const showSuccessMessage = ref(false);
   const showErrorMessage = ref(false);
+
+  const themeStore = useThemeStore();
+  const isDark = computed(() => themeStore.isDark);
 
   const isWarningModalOpen = ref(false);
   const isStatusModalOpen = ref(false);
