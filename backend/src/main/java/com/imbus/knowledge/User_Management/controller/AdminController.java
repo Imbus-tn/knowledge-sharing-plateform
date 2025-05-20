@@ -14,6 +14,7 @@ import com.imbus.knowledge.User_Management.dto.UserResponse;
 import com.imbus.knowledge.User_Management.dto.WarningRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -271,31 +272,56 @@ public class AdminController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, String>> sendWarning(
             @PathVariable Long userId,
-            @RequestBody WarningRequest request) {
+            @RequestBody(required = false) WarningRequest request,
+            Authentication authentication) {
 
-        // Find the user by ID
+        // Get admin name
+        String adminName = getAdminName(authentication);
+
+        // Fetch target user
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Build the email content
+        // Build final message
+        String messageContent = (request != null && request.message() != null && !request.message().trim().isEmpty())
+                ? request.message()
+                : "Please review your recent activity and ensure it aligns with platform standards.";
+
+        // Final formatted message with proper line breaks
+        String finalMessage = String.join("\r\n\r\n", // Use \r\n for email compatibility
+                "This is an official warning from the Imbus Knowledge team.",
+                "From Admin: " + adminName,
+                "Message: " + messageContent,
+                "Repeated violations may result in account action."
+        );
+
+        // Send email
         MailBody mail = MailBody.builder()
                 .to(user.getEmail())
                 .subject("Account Warning")
-                .text(request.message())
+                .text(finalMessage)
                 .build();
 
-        // Attempt to send the email
         try {
             emailService.sendSimpleMessage(mail);
         } catch (Exception e) {
             throw new RuntimeException("Failed to send warning email: " + e.getMessage());
         }
 
-        // Prepare the success response
+        // Return success response
         Map<String, String> response = new HashMap<>();
         response.put("message", "Warning email sent successfully to " + user.getEmail());
-
-        // Return the response with HTTP 200 OK status
         return ResponseEntity.ok(response);
+    }
+
+    private String getAdminName(Authentication authentication) {
+        if (authentication != null && authentication.isAuthenticated()) {
+            if (authentication.getPrincipal() instanceof UserDetailsImpl userDetails) {
+                User admin = userRepository.findByEmail(userDetails.getUsername())
+                        .orElseThrow(() -> new RuntimeException("Admin not found"));
+                return admin.getName();
+            }
+        }
+        return "System Admin";
     }
 }
