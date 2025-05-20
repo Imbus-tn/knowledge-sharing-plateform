@@ -1,21 +1,18 @@
 package com.imbus.knowledge.chat.controller;
 
-
-
 import com.imbus.knowledge.chat.dto.ChatDto;
 import com.imbus.knowledge.chat.services.ChatService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.Set;
-import java.util.List;
 
+import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/chats")
 @RequiredArgsConstructor
 public class ChatController {
-
     private final ChatService chatService;
 
     @GetMapping
@@ -31,7 +28,8 @@ public class ChatController {
     @PostMapping
     public ResponseEntity<ChatDto> createChat(
             @RequestParam Set<Long> participantIds,
-            @RequestParam(required = false) String chatName) {
-        return ResponseEntity.ok(chatService.createChat(participantIds, chatName));
+            @RequestParam(required = false) String chatName,
+            @RequestParam Long creatorId) {
+        return ResponseEntity.ok(chatService.createChat(participantIds, chatName, creatorId));
     }
 }

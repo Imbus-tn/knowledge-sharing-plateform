@@ -14,7 +14,7 @@ import java.util.Set;
 public class MessageDto {
     private Long id;
     private Long chatId;
-    private UserDto sender;
+    private UserInfoDto sender;
     private String content;
     private Set<ReactionDto> reactions;
     private MessagePreviewDto replyTo;

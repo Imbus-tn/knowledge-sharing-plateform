@@ -1,6 +1,6 @@
 package com.imbus.knowledge.chat.entities;
 
-
+import com.imbus.knowledge.User_Management.entities.User;
 import jakarta.persistence.*;
 import lombok.*;
 

@@ -1,8 +1,11 @@
 package com.imbus.knowledge.chat.services;
 
-import com.imbus.knowledge.chat.dto.*;
+import com.imbus.knowledge.User_Management.entities.User;
+import com.imbus.knowledge.User_Management.repositories.UserRepository;
+import com.imbus.knowledge.chat.dto.ReactionDto;
+import com.imbus.knowledge.chat.dto.UserInfoDto;
 import com.imbus.knowledge.chat.entities.*;
-import com.imbus.knowledge.chat.exception.*;
+import com.imbus.knowledge.chat.exception.ReactionNotFoundException;
 import com.imbus.knowledge.chat.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,16 +22,15 @@ public class ReactionService {
     @Transactional
     public ReactionDto addReaction(Long messageId, Long userId, String emoji) {
         Message message = messageRepository.findById(messageId)
-                .orElseThrow(() -> new MessageNotFoundException(messageId));
+                .orElseThrow(() -> new RuntimeException("Message not found with id: " + messageId));
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (!chatRepository.existsByIdAndParticipantsId(message.getChat().getId(), userId)) {
-            throw new UnauthorizedReactionException();
+            throw new RuntimeException("Unauthorized reaction");
         }
 
-        // Remove existing reaction if exists
         reactionRepository.deleteByMessageIdAndUserId(messageId, userId);
 
         Reaction reaction = new Reaction();
@@ -36,8 +38,7 @@ public class ReactionService {
         reaction.setUser(user);
         reaction.setEmoji(emoji);
 
-        Reaction savedReaction = reactionRepository.save(reaction);
-        return convertToDto(savedReaction);
+        return convertToDto(reactionRepository.save(reaction));
     }
 
     @Transactional
@@ -56,20 +57,11 @@ public class ReactionService {
                 .build();
     }
 
-    private UserDto convertToUserDto(User user) {
-        return UserDto.builder()
+    private UserInfoDto convertToUserDto(User user) {
+        return UserInfoDto.builder()
                 .id(user.getId())
                 .name(user.getName())
-                .initials(getInitials(user.getName()))
                 .avatarUrl(user.getAvatarUrl())
-                .online(user.isOnline())
                 .build();
-    }
-
-    private String getInitials(String name) {
-        if (name == null || name.isEmpty()) return "";
-        String[] parts = name.split(" ");
-        if (parts.length == 1) return parts[0].substring(0, 1).toUpperCase();
-        return (parts[0].substring(0, 1) + parts[parts.length - 1].substring(0, 1)).toUpperCase();
     }
 }

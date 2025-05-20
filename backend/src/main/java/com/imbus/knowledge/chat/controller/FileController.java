@@ -1,9 +1,7 @@
 package com.imbus.knowledge.chat.controller;
 
-
 import com.imbus.knowledge.chat.dto.FileUploadResponse;
 import com.imbus.knowledge.chat.services.FileStorageService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
@@ -14,32 +12,39 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 @RestController
-@RequestMapping("/api/files")
-@RequiredArgsConstructor
+@RequestMapping("/api/chat/files")
 public class FileController {
-
     private final FileStorageService fileStorageService;
 
-    @PostMapping("/upload")
-    public ResponseEntity<FileUploadResponse> uploadFile(@RequestParam("file") MultipartFile file) {
-        return ResponseEntity.ok(fileStorageService.storeFile(file));
+    public FileController(FileStorageService fileStorageService) {
+        this.fileStorageService = fileStorageService;
     }
 
-    @GetMapping("/download/{fileName:.+}")
-    public ResponseEntity<Resource> downloadFile(@PathVariable String fileName) throws IOException {
-        Path filePath = Paths.get(fileStorageService.getUploadDir()).resolve(fileName).normalize();
+    @PostMapping("/upload")
+    public FileUploadResponse uploadFile(@RequestParam("file") MultipartFile file) throws Exception {
+        return fileStorageService.storeFile(file);
+    }
+
+    @GetMapping("/{fileName:.+}")
+    public ResponseEntity<Resource> downloadFile(@PathVariable String fileName) throws Exception {
+        Path filePath = fileStorageService.loadFile(fileName);
         Resource resource = new UrlResource(filePath.toUri());
 
-        if (resource.exists()) {
+        if (resource.exists() || resource.isReadable()) {
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"" + resource.getFilename() + "\"")
                     .body(resource);
-        } else {
-            return ResponseEntity.notFound().build();
         }
+        throw new RuntimeException("Could not read file: " + fileName);
+    }
+
+    @DeleteMapping("/{fileName:.+}")
+    public ResponseEntity<Void> deleteFile(@PathVariable String fileName) throws IOException {
+        fileStorageService.deleteFile(fileName);
+        return ResponseEntity.noContent().build();
     }
 }

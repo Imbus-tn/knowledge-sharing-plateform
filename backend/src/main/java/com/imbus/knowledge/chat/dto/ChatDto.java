@@ -16,9 +16,9 @@ public class ChatDto {
     private Long id;
     private String name;
     private boolean isGroup;
-    private Set<ParticipantDto> participants;
     private LocalDateTime createdAt;
     private LocalDateTime lastActivity;
     private int unreadCount;
     private MessagePreviewDto lastMessage;
+    private Set<UserInfoDto> participants; // Changed to Set
 }

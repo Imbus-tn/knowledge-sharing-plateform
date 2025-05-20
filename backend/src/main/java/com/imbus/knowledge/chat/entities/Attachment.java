@@ -1,20 +1,25 @@
 package com.imbus.knowledge.chat.entities;
 
-import jakarta.persistence.Embeddable;
+import jakarta.persistence.*;
 import lombok.*;
-import jakarta.persistence.Column;
-@Embeddable
+
+@Entity
+@Table(name = "attachments")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Attachment {
-    @Column(name = "attachment_type")
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false)
     private String type;
 
-    @Column(name = "attachment_url")
+    @Column(nullable = false)
     private String url;
 
-    @Column(name = "attachment_name")
+    @Column(nullable = false)
     private String name;
 
-    @Column(name = "attachment_size")
-    private Long size;
+    @Column(nullable = false)
+    private long size;
 }

@@ -1,14 +1,17 @@
 package com.imbus.knowledge.chat.services;
 
+import com.imbus.knowledge.User_Management.entities.User;
+import com.imbus.knowledge.User_Management.repositories.UserRepository;
 import com.imbus.knowledge.chat.dto.*;
-import com.imbus.knowledge.chat.entities.*;
+import com.imbus.knowledge.chat.entities.Chat;
 import com.imbus.knowledge.chat.exception.ChatNotFoundException;
-import com.imbus.knowledge.chat.repository.*;
+import com.imbus.knowledge.chat.repository.ChatRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -18,18 +21,33 @@ import java.util.stream.Collectors;
 public class ChatService {
     private final ChatRepository chatRepository;
     private final UserRepository userRepository;
-    private final MessageRepository messageRepository;
+    private final UserPresenceService presenceService;
 
     @Transactional
-    public ChatDto createChat(Set<Long> participantIds, String chatName) {
+    public ChatDto createChat(Set<Long> participantIds, String chatName, Long creatorId) {
+        User creator = userRepository.findById(creatorId)
+                .orElseThrow(() -> new RuntimeException("Creator not found"));
+
+        Set<User> participants = new HashSet<>(userRepository.findAllById(participantIds));
+        participants.add(creator); // Include creator in participants
+
         Chat chat = new Chat();
-        chat.setParticipants(userRepository.findAllByIdIn(participantIds));
+        chat.setParticipants(participants);
         chat.setCreatedAt(LocalDateTime.now());
         chat.setLastActivity(LocalDateTime.now());
 
-        if (participantIds.size() > 2) {
+        if (participants.size() > 2) {
             chat.setGroup(true);
-            chat.setName(chatName);
+            chat.setName(chatName != null ? chatName : "Group Chat");
+        } else {
+            chat.setGroup(false);
+            // Set chat name as the other participant's name for 1:1 chats
+            String otherParticipantName = participants.stream()
+                    .filter(p -> !p.getId().equals(creatorId))
+                    .findFirst()
+                    .map(User::getName)
+                    .orElse("Private Chat");
+            chat.setName(otherParticipantName);
         }
 
         return convertToDto(chatRepository.save(chat));
@@ -37,28 +55,21 @@ public class ChatService {
 
     @Transactional(readOnly = true)
     public List<ChatDto> getUserChats(Long userId) {
-        return chatRepository.findAllByParticipantId(userId).stream()
-                .map(this::convertToDtoWithUnreadCount)
+        return chatRepository.findByParticipants_Id(userId).stream()
+                .map(this::convertToDto)
+                .sorted((c1, c2) -> c2.getLastActivity().compareTo(c1.getLastActivity()))
                 .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public ChatDto getChatById(Long chatId, Long userId) {
-        Chat chat = chatRepository.findById(chatId)
-                .orElseThrow(() -> new ChatNotFoundException("Chat not found with id: " + chatId));
-
-        if (!chat.getParticipants().stream().anyMatch(p -> p.getId().equals(userId))) {
-            throw new ChatNotFoundException("User is not a participant of this chat");
+        if (!chatRepository.existsByIdAndParticipants_Id(chatId, userId)) {
+            throw new ChatNotFoundException("Access denied");
         }
 
-        return convertToDtoWithUnreadCount(chat);
-    }
-
-    private ChatDto convertToDtoWithUnreadCount(Chat chat) {
-        ChatDto dto = convertToDto(chat);
-        dto.setUnreadCount(messageRepository.countUnreadMessages(chat.getId(),
-                chat.getParticipants().iterator().next().getId()));
-        return dto;
+        return chatRepository.findById(chatId)
+                .map(this::convertToDto)
+                .orElseThrow(() -> new ChatNotFoundException("Chat not found"));
     }
 
     private ChatDto convertToDto(Chat chat) {
@@ -66,50 +77,20 @@ public class ChatService {
                 .id(chat.getId())
                 .name(chat.getName())
                 .isGroup(chat.isGroup())
-                .participants(chat.getParticipants().stream()
-                        .map(this::convertToParticipantDto)
-                        .collect(Collectors.toSet()))
                 .createdAt(chat.getCreatedAt())
                 .lastActivity(chat.getLastActivity())
-                .lastMessage(chat.getMessages().isEmpty() ? null :
-                        convertToMessagePreviewDto(chat.getMessages().iterator().next()))
+                .participants(chat.getParticipants().stream()
+                        .map(this::convertToUserDto)
+                        .collect(Collectors.toSet()))
                 .build();
     }
 
-    private ParticipantDto convertToParticipantDto(User user) {
-        return ParticipantDto.builder()
+    private UserInfoDto convertToUserDto(User user) {
+        return UserInfoDto.builder()
                 .id(user.getId())
                 .name(user.getName())
-                .initials(getInitials(user.getName()))
                 .avatarUrl(user.getAvatarUrl())
-                .online(user.isOnline())
+                .online(presenceService.isUserOnline(user.getId()))
                 .build();
-    }
-
-    private MessagePreviewDto convertToMessagePreviewDto(Message message) {
-        return MessagePreviewDto.builder()
-                .id(message.getId())
-                .preview(message.getContent().length() > 30 ?
-                        message.getContent().substring(0, 30) + "..." : message.getContent())
-                .sentAt(message.getSentAt())
-                .sender(convertToUserDto(message.getSender()))
-                .build();
-    }
-
-    private UserDto convertToUserDto(User user) {
-        return UserDto.builder()
-                .id(user.getId())
-                .name(user.getName())
-                .initials(getInitials(user.getName()))
-                .avatarUrl(user.getAvatarUrl())
-                .online(user.isOnline())
-                .build();
-    }
-
-    private String getInitials(String name) {
-        if (name == null || name.isEmpty()) return "";
-        String[] parts = name.split(" ");
-        if (parts.length == 1) return parts[0].substring(0, 1).toUpperCase();
-        return (parts[0].substring(0, 1) + parts[parts.length - 1].substring(0, 1)).toUpperCase();
     }
 }

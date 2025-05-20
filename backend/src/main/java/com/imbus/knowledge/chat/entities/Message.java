@@ -1,18 +1,17 @@
 package com.imbus.knowledge.chat.entities;
 
-
-
+import com.imbus.knowledge.User_Management.entities.User;
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
 
 @Entity
 @Table(name = "messages")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Message {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -23,20 +22,20 @@ public class Message {
     @JoinColumn(name = "sender_id", nullable = false)
     private User sender;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
-    @OneToMany(mappedBy = "message", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private Set<Reaction> reactions = new HashSet<>();
+    @Column(nullable = false)
+    private LocalDateTime sentAt;
+
+    @Column(nullable = false)
+    private boolean read;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reply_to_id")
-    private Message replyTo;
+    private Message replyToMessage;
 
-    private LocalDateTime sentAt;
-    private boolean read;
-
-    @Embedded
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "attachment_id")
     private Attachment attachment;
 }

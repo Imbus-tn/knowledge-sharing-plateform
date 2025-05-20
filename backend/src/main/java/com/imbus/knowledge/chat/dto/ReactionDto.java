@@ -11,5 +11,5 @@ import lombok.*;
 public class ReactionDto {
     private Long id;
     private String emoji;
-    private UserDto user;
+    private UserInfoDto user;
 }

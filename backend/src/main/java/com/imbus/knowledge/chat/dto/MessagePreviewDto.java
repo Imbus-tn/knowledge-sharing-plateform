@@ -15,5 +15,5 @@ public class MessagePreviewDto {
     private Long id;
     private String preview;
     private LocalDateTime sentAt;
-    private UserDto sender;
+    private UserInfoDto sender;
 }

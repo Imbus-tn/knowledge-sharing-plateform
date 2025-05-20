@@ -1,13 +1,10 @@
 package com.imbus.knowledge.chat.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
-import lombok.*;
-
-@Getter
-@Setter
-@NoArgsConstructor
+@Data
 @AllArgsConstructor
-@Builder
 public class FileUploadResponse {
     private String fileName;
     private String fileDownloadUri;
