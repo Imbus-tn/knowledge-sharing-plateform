@@ -14,6 +14,7 @@ import DashboardPage from '../views/DashboardPage.vue';
 import DiscussionsPage from '../views/DiscussionsPage.vue';
 import FavoritesPage from '../views/FavoritesPage.vue';
 import InviteUserPage from '../views/InviteUserPage.vue';
+import NotificationsPage from '../views/NotificationsPage.vue';
 import { useAuthStore } from '../stores/auth';
 
 const router = createRouter({
@@ -97,6 +98,16 @@ const router = createRouter({
         path: '/favorites',
         name: 'favorites',
         component: FavoritesPage
+      },
+      {
+        path: '/favorites',
+        name: 'favorites',
+        component: FavoritesPage
+      },
+      {
+        path: '/notifications',
+        name: 'notifications',
+        component: NotificationsPage
       },
       {
         path: '/invite-user',

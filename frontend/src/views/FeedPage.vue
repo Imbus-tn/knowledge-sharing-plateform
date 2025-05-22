@@ -812,11 +812,21 @@
 
   const toggleFavorite = (post: Post) => {
     post.isFavorite = !post.isFavorite;
-    notificationStore.addNotification({
-      type: 'system',
-      message: post.isFavorite ? 'Added to favorites' : 'Removed from favorites',
-      link: '/feed'
-    });
+    
+    // Notify the post's author if someone favorited their post
+    if (post.author.id !== authStore.user?.id && post.isFavorite) {
+      notificationStore.addNotification({
+        type: 'favorite',
+        message: `${authStore.user?.name} favorited your post "${post.title}"`,
+        link: `/post/${post.id}`,
+        userId: post.author.id,
+        postId: post.id,
+        user: {
+          name: authStore.user?.name || 'User',
+          initials: authStore.user?.initials || 'U'
+        }
+      });
+    }
   };
   
   // Create post handler
