@@ -10,8 +10,11 @@
         <!-- Left Section - Logo -->
         <div class="flex-shrink-0">
           <router-link to="/" class="flex items-center">
-            <BookOpen :class="isDark ? 'text-emerald-500' : 'text-emerald-600'" class="w-8 h-8" />
-            <span :class="isDark ? 'text-white' : 'text-slate-900'" class="ml-2 text-xl font-bold">Imbus Knowledge</span>
+            <img 
+              :src="isDark ? logoDark : logoLight" 
+              alt="Imbus Knowledge Logo" 
+              class="h-14 w-auto"
+            />
           </router-link>
         </div>
         <!-- Center Section - Search -->
@@ -258,9 +261,11 @@
 import { computed, ref, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { 
-  BookOpen, Search, Home, Bell, MessageSquare, 
+  Search, Home, Bell, MessageSquare, 
   User, LayoutDashboard, UserPlus, Users,Sun, Moon, LogOut 
 } from 'lucide-vue-next';
+import logoDark from '../assets/logo-dark.png';
+import logoLight from '../assets/logo-light.png';
 import { useAuthStore } from '../stores/auth';
 import type { UserRole } from '../types/UserRole';
 import { useThemeStore } from '../stores/theme';

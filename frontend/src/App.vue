@@ -19,11 +19,16 @@
     >
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16">
-          <router-link to="/" class="flex items-center space-x-3">
-            <BookOpen class="w-8 h-8 text-emerald-500" />
-            <span class="text-xl font-bold text-white">Imbus Knowledge</span>
+          <!-- Logo Section -->
+          <router-link to="/" class="flex items-center">
+            <img 
+              :src="logoDark" 
+              alt="Imbus Knowledge Logo" 
+              class="h-14 w-auto"
+            />
           </router-link>
 
+          <!-- Sign In Button -->
           <router-link
             to="/login"
             class="inline-flex items-center px-4 py-2 bg-emerald-500 text-white rounded-lg font-medium hover:bg-emerald-600 transition-colors"
@@ -47,7 +52,7 @@
 
 <script setup lang="ts">
 import { computed, watch, onMounted } from 'vue';
-import { BookOpen } from 'lucide-vue-next';
+import logoDark from './assets/logo-dark.png';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from './stores/auth';
 import { useThemeStore } from './stores/theme';
