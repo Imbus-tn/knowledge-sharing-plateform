@@ -77,6 +77,16 @@ public class PostController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/favorites")
+    public ResponseEntity<Page<PostResponse>> getFavoritePosts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        Long userId = getUserIdFromUserDetails(userDetails);
+        Page<PostResponse> favoritePosts = postService.getFavoritePostsByUserId(userId, page, size);
+        return ResponseEntity.ok(favoritePosts);
+    }
+
     // React to Post
     @PostMapping("/{postId}/react")
     public ResponseEntity<Void> reactToPost(
@@ -90,24 +100,24 @@ public class PostController {
 
     // Comment on Post
     @PostMapping("/{postId}/comment")
-    public ResponseEntity<Void> addComment(
+    public ResponseEntity<CommentResponse> addComment(
             @PathVariable Long postId,
             @RequestBody CommentRequest request,
             @AuthenticationPrincipal UserDetailsImpl userDetails) {
         Long userId = getUserIdFromUserDetails(userDetails);
-        postService.addCommentToPost(postId, request, userId);
-        return ResponseEntity.noContent().build();
+        CommentResponse comment = postService.addCommentToPost(postId, request, userId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(comment);
     }
 
     // Reply to a Comment
     @PostMapping("/comments/{commentId}/reply")
-    public ResponseEntity<Void> replyToComment(
+    public ResponseEntity<CommentResponse> replyToComment(
             @PathVariable Long commentId,
             @RequestBody CommentRequest request,
             @AuthenticationPrincipal UserDetailsImpl userDetails) {
         Long userId = getUserIdFromUserDetails(userDetails);
-        postService.replyToComment(commentId, request, userId);
-        return ResponseEntity.noContent().build();
+        CommentResponse reply = postService.replyToComment(commentId, request, userId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(reply);
     }
 
     // React to Comment

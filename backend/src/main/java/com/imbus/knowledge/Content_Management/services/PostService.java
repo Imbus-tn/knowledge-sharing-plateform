@@ -9,6 +9,7 @@ import com.imbus.knowledge.User_Management.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -69,13 +70,15 @@ public class PostService {
         return PostResponse.from(postRepository.save(post)); // Map to DTO
     }
 
+    @Transactional
     public void deletePost(Long postId, Long userId) {
         Post post = getPostEntityById(postId);
+
         if (!post.getAuthor().getId().equals(userId)) {
             throw new SecurityException("You are not authorized to delete this post.");
         }
 
-        postRepository.delete(post);
+        postRepository.delete(post); // This will cascade delete related entities
     }
 
     // ===== INTERACTIONS =====
@@ -98,6 +101,23 @@ public class PostService {
         }
     }
 
+    public Page<PostResponse> getFavoritePostsByUserId(Long userId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+
+        // Get current user
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Get favorites for this user
+        Page<Favorite> favoritesPage = favoriteRepository.findByUser(user, pageable);
+
+        // Map to PostResponse
+        return favoritesPage.map(favorite -> {
+            Post post = favorite.getPost();
+            return PostResponse.from(post); // include userId to set isFavorite = true
+        });
+    }
+
     @Transactional
     public void reactToPost(Long postId, ReactionRequest request, Long userId) {
         Post post = getPostEntityById(postId);
@@ -118,7 +138,7 @@ public class PostService {
         }
     }
 
-    public void addCommentToPost(Long postId, CommentRequest request, Long userId) {
+    public CommentResponse addCommentToPost(Long postId, CommentRequest request, Long userId) {
         Post post = getPostEntityById(postId);
         User user = getUserById(userId);
 
@@ -127,11 +147,13 @@ public class PostService {
         comment.setPost(post);
         comment.setAuthor(user);
         comment.setCreatedAt(LocalDateTime.now());
+        comment.setParent(null); // Top-level comment
 
-        commentRepository.save(comment);
+        Comment savedComment = commentRepository.save(comment);
+        return CommentResponse.from(savedComment);
     }
 
-    public void replyToComment(Long commentId, CommentRequest request, Long userId) {
+    public CommentResponse replyToComment(Long commentId, CommentRequest request, Long userId) {
         Comment parent = getCommentById(commentId);
         User user = getUserById(userId);
 
@@ -142,7 +164,8 @@ public class PostService {
         reply.setParent(parent);
         reply.setCreatedAt(LocalDateTime.now());
 
-        commentRepository.save(reply);
+        Comment savedReply = commentRepository.save(reply);
+        return CommentResponse.from(savedReply);
     }
 
     @Transactional
@@ -197,7 +220,7 @@ public class PostService {
     }
 
     private Comment getCommentById(Long commentId) {
-        return commentRepository.findById(commentId)
+        return commentRepository.findByIdWithReplies(commentId)
                 .orElseThrow(() -> new RuntimeException("Comment not found"));
     }
 }
