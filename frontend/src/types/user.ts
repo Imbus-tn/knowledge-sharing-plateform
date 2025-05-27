@@ -1,7 +1,7 @@
 import { UserRole } from "./UserRole";
 
 export interface User {
-    id: number;
+    id: string | number;
     name: string;
     email: string;
     role: UserRole;
@@ -11,4 +11,5 @@ export interface User {
     github?: string;
     linkedin?: string;
     avatarUrl?: string; 
+    lastLogin?: string;
   }

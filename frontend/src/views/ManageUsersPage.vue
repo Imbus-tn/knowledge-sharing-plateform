@@ -1,116 +1,280 @@
   <template>
-    <div class="max-w-7xl mx-auto p-6">
-      <h1 class="text-2xl font-bold mb-6 text-slate-200">Manage Users</h1>
+    <div :class="[
+      'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8',
+      isDark ? 'text-slate-300' : 'text-slate-700'
+    ]">
+      <!-- Page Header -->
+      <div class="mb-8">
+        <h1 :class="[
+          'text-2xl font-bold mb-6',
+          isDark ? 'text-slate-200' : 'text-slate-900'
+        ]">
+          Manage Users
+        </h1>
 
-      <!-- Success/Error Messages -->
-      <div v-if="showSuccessMessage" 
-          class="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-lg flex justify-center">
-        <p class="text-emerald-500 text-sm text-center">{{ successMessageText }}</p>
-      </div>
-      <div v-if="showErrorMessage" 
-          class="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg flex justify-center">
-        <p class="text-red-500 text-sm text-center">{{ errorMessageText }}</p>
+        <!-- Success/Error Messages -->
+        <div v-if="showSuccessMessage" :class="[
+          'mb-6 p-4 rounded-lg flex justify-center',
+          isDark ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-500' : 'bg-emerald-100 border border-emerald-200 text-emerald-700'
+        ]">
+          {{ successMessageText }}
+        </div>
+
+        <div v-if="showErrorMessage" :class="[
+          'mb-6 p-4 rounded-lg flex justify-center',
+          isDark ? 'bg-red-500/10 border border-red-500/20 text-red-500' : 'bg-red-100 border border-red-200 text-red-700'
+        ]">
+          {{ errorMessageText }}
+        </div>
       </div>
 
       <!-- Search & Filters -->
       <div class="relative max-w-2xl mx-auto mb-8">
         <div class="relative">
-          <MagnifyingGlassIcon class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+          <MagnifyingGlassIcon :class="isDark ? 'text-slate-400' : 'text-slate-500'" class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5" />
           <input
             v-model="searchQuery"
             type="text"
             placeholder="Search for users..."
-            class="w-full pl-10 pr-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            :class="[
+              'w-full pl-10 pr-4 py-3 rounded-lg focus:outline-none focus:ring-2 transition-colors border-2 shadow-xl',
+              isDark 
+                ? 'bg-slate-700/50 border-slate-600 text-white placeholder-slate-400 focus:ring-emerald-500' 
+                : 'bg-slate-200/50 border-slate-300 text-slate-900 placeholder-slate-500 focus:ring-emerald-600'
+            ]"
           />
         </div>
+
+        <!-- Role Filters -->
         <div class="mt-4 flex justify-center space-x-4">
           <button
             v-for="role in roles"
             :key="role"
             @click="selectedRoleFilter = role"
-            class="px-4 py-2 rounded-full text-sm font-medium"
-            :class="selectedRoleFilter === role ? 'bg-emerald-500 text-white' : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600'"
+            :class="[
+              'px-4 py-2 rounded-full text-sm font-medium transition-colors border shadow-xl',
+              selectedRoleFilter === role 
+                ? (isDark ? 'bg-emerald-500 text-white' : 'bg-emerald-500 text-white') 
+                : (isDark 
+                    ? 'bg-slate-700/50 border-slate-700 text-slate-300 hover:bg-slate-600/50' 
+                    : 'bg-slate-100/50 border-slate-300 text-slate-600 hover:bg-slate-200/50'
+                  )
+            ]"
           >
             {{ role }}
           </button>
         </div>
       </div>
 
-      <!-- User List Container -->
-      <div class="bg-slate-800/50 border border-slate-700 rounded-lg p-6">
-        <!-- Check if paginatedUsers is empty -->
-        <div v-if="paginatedUsers.length === 0" class="text-slate-400 text-center py-4">
-          No users found
-        </div>
-        <div v-else class="space-y-4">
-          <div 
-            v-for="user in paginatedUsers" 
-            :key="user.id"
-            class="bg-slate-800/50 border border-slate-700 p-4 rounded-lg flex items-center justify-between transition-shadow hover:shadow-md"
-          >
-            <!-- User Info -->
-            <div class="flex items-center space-x-4">
-              <div class="w-12 h-12 rounded-full overflow-hidden border border-slate-700">
-                <img v-if="avatarUrl(user)" :src="avatarUrl(user)" class="w-full h-full object-cover">
-                <div v-else class="w-full h-full bg-emerald-500 flex items-center justify-center">
-                  <span class="text-white text-lg">{{ initials(user) }}</span>
-                </div>
-              </div>
-              <div>
-                <p class="text-slate-300 font-medium">{{ user.name }}</p>
-                <p class="text-slate-400 text-sm">{{ user.email }}</p>
-                <div class="mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs" :class="roleStyle(user.role)">
-                  {{ user.role.toLowerCase() }}
-                </div>
-              </div>
-            </div>
+      <!-- User Table -->
+      <div :class="[
+        'backdrop-blur-sm rounded-lg border overflow-hidden shadow-xl',
+        isDark 
+          ? 'bg-slate-800/50 border-slate-700' 
+          : 'bg-slate-100/50 border-slate-200'
+      ]">
+        <table class="w-full border-separate border-spacing-0">
+          <thead>
+            <tr :class="isDark ? 'text-left text-xs font-medium uppercase tracking-wider bg-slate-700 text-slate-400' : 'text-left text-xs font-medium uppercase tracking-wider bg-slate-100 text-slate-500'">
+              <th :class="[
+                'px-6 py-3 whitespace-nowrap',
+                isDark ? 'text-white border-b border-slate-600' : 'text-slate-900 border-b border-slate-200'
+              ]">#</th>
+              <th :class="[
+                'px-6 py-3 whitespace-nowrap',
+                isDark ? 'text-white border-b border-slate-600' : 'text-slate-900 border-b border-slate-200'
+              ]">Name</th>
+              <th :class="[
+                'px-6 py-3 whitespace-nowrap',
+                isDark ? 'text-white border-b border-slate-600' : 'text-slate-900 border-b border-slate-200'
+              ]">Email</th>
+              <th :class="[
+                'px-6 py-3 whitespace-nowrap',
+                isDark ? 'text-white border-b border-slate-600' : 'text-slate-900 border-b border-slate-200'
+              ]">Role</th>
+              <th :class="[
+                'px-6 py-3 whitespace-nowrap',
+                isDark ? 'text-white border-b border-slate-600' : 'text-slate-900 border-b border-slate-200'
+              ]">Status</th>
+              <th :class="[
+                'px-6 py-3 whitespace-nowrap',
+                isDark ? 'text-white border-b border-slate-600' : 'text-slate-900 border-b border-slate-200'
+              ]">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr 
+              v-for="(user, index) in paginatedUsers" 
+              :key="user.id"
+              :class="isDark ? 'hover:bg-slate-700/50' : 'hover:bg-slate-200/70'"
+              class="transition-colors"
+            >
+              <!-- ID -->
+              <td :class="[
+                'px-6 py-4 whitespace-nowrap',
+                isDark ? 'text-white border-b border-slate-600' : 'text-slate-900 border-b border-slate-200'
+              ]">
+                {{ index + 1 }}
+              </td>
 
-            <!-- Actions -->
-            <div class="flex items-center space-x-3">
-              <router-link 
-                :to="{ name: 'update-user-role', params: { userId: user.id } }"
-                class="text-slate-400 hover:text-slate-300 transition-colors"
-                title="Edit Role"
-              >
-                <Edit3 class="w-5 h-5" />
-              </router-link>
-              <button @click="openDeleteModal(user.id)" class="text-red-500 hover:text-red-600" title="Delete User">
-                <Trash2 class="w-5 h-5" />
-              </button>
-              <button @click="openWarningModal(user.id)" class="text-yellow-500 hover:text-yellow-600" title="Send Warning">
-                <AlertCircle class="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-        </div>
+              <!-- Name -->
+              <td :class="[
+                'px-6 py-4 whitespace-nowrap flex items-center space-x-2',
+                isDark ? 'text-white border-b border-slate-600' : 'text-slate-900 border-b border-slate-200'
+              ]">
+                <img 
+                  v-if="user.avatarUrl" 
+                  :src="avatarUrl(user)" 
+                  alt="User Avatar" 
+                  class="w-8 h-8 rounded-full object-cover"
+                />
+                <div 
+                  v-else 
+                  :class="isDark ? 'bg-emerald-500 border-slate-600/50' : 'bg-emerald-500 border-slate-200/50'"
+                  class="w-8 h-8 rounded-full flex items-center justify-center border"
+                >
+                  <span class="text-xs text-white font-medium">{{ initials(user) }}</span>
+                </div>
+                <span>{{ user.name }}</span>
+              </td>
+              
+              <!-- Email -->
+              <td :class="[
+                'px-6 py-4 whitespace-nowrap',
+                isDark ? 'text-white border-b border-slate-600' : 'text-slate-900 border-b border-slate-200'
+              ]">
+                {{ user.email }}
+              </td>
+              
+              <!-- Role -->
+              <td :class="[
+                'px-6 py-4 whitespace-nowrap',
+                isDark ? 'text-white border-b border-slate-600' : 'text-slate-900 border-b border-slate-200'
+              ]">
+                <span 
+                  class="inline-flex items-center px-2 py-0.5"
+                  :class="isDark ? 'text-white' : 'text-slate-900'"
+                >
+                  {{ user.role[0]+user.role.slice(1).toLowerCase() }}
+                </span>
+              </td>
 
-        <!-- Pagination Controls -->
-        <div class="flex justify-center mt-6 space-x-4">
-          <button
-            @click="prevPage"
-            :disabled="currentPage === 1"
-            class="px-4 py-2 bg-slate-700/50 text-slate-300 rounded-lg disabled:opacity-50"
-          >
-            Previous
-          </button>
-          <span class="text-slate-400">Page {{ currentPage }} of {{ totalPages }}</span>
-          <button
-            @click="nextPage"
-            :disabled="currentPage >= totalPages"
-            class="px-4 py-2 bg-slate-700/50 text-slate-300 rounded-lg disabled:opacity-50"
-          >
-            Next
-          </button>
-        </div>
+              <!-- Status -->
+              <td :class="[
+                'px-6 py-4 whitespace-nowrap',
+                isDark ? 'text-white border-b border-slate-600' : 'text-slate-900 border-b border-slate-200'
+              ]">
+                <div class="flex items-center space-x-2">
+                  <span 
+                    class="w-3 h-3 rounded-full"
+                    :class="user.enabled ? (isDark ? 'bg-emerald-500' : 'bg-emerald-600') : (isDark ? 'bg-red-500' : 'bg-red-600')"
+                  ></span>
+                  <span>{{ user.enabled ? 'Active' : 'Inactive' }}</span>
+                </div>
+              </td>
+
+              <!-- Actions -->
+              <td :class="[
+                'px-6 py-4 whitespace-nowrap border-b',
+                isDark ? 'border-slate-600' : 'border-slate-200'
+              ]">
+                <div class="flex items-center space-x-2">
+                  <!-- Hidden Placeholder (Maintains spacing) -->
+                  <div v-if="user.role === UserRole.ADMIN" class="w-5 h-5 invisible"></div>
+
+                  <!-- Admin Lock Icon (Second Position) -->
+                  <div 
+                    v-if="user.role === UserRole.ADMIN"
+                    class="relative group"
+                    title="Admin actions are restricted"
+                  >
+                    <Lock 
+                      :class="isDark ? 'text-slate-400' : 'text-slate-500'" 
+                      class="w-5 h-5 cursor-help"
+                    />
+                  </div>
+
+                  <!-- Edit Role (Non-admin Only) -->
+                  <router-link 
+                    v-if="user.role !== UserRole.ADMIN"
+                    :to="{ name: 'update-user-role', params: { userId: user.id } }"
+                    :class="[
+                      'text-sm transition-colors',
+                      isDark ? 'text-slate-400 hover:text-slate-300' : 'text-slate-500 hover:text-slate-600']"
+                    title="Edit Role"
+                  >
+                    <Edit3 class="w-5 h-5" />
+                  </router-link>
+
+                  <!-- Deactivate / Activate (Non-admin Only) -->
+                  <button
+                    v-if="user.role !== UserRole.ADMIN"
+                    @click="openStatusModal(user.id)"
+                    :title="user.enabled ? 'Deactivate User' : 'Activate User'"
+                    class="transition-colors"
+                  >
+                    <component 
+                      :is="user.enabled ? UserRoundCheck : UserRoundX"
+                      :class="[
+                        'w-5 h-5',
+                        isDark 
+                          ? (user.enabled ? 'text-emerald-500 hover:text-emerald-400' : 'text-red-500 hover:text-red-400') 
+                          : (user.enabled ? 'text-emerald-600 hover:text-emerald-500' : 'text-red-600 hover:text-red-500')]"
+                    />
+                  </button>
+
+                  <!-- Send Warning (Non-admin Only) -->
+                  <button
+                    v-if="user.role !== UserRole.ADMIN"
+                    @click="openWarningModal(user.id)" 
+                    :class="[
+                      'transition-colors',
+                      isDark ? 'text-amber-500 hover:text-amber-400' : 'text-amber-600 hover:text-amber-500']"
+                    title="Send Warning"
+                  >
+                    <AlertCircle class="w-5 h-5" />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
-      <!-- Modals -->
+      <!-- Pagination -->
+      <div class="flex justify-center mt-6 space-x-4">
+        <button
+          @click="prevPage"
+          :disabled="currentPage === 1"
+          :class="[
+            'px-4 py-2 rounded-lg disabled:opacity-50 border',
+            isDark ? 'bg-slate-700/50 border-slate-700 text-slate-300 hover:bg-slate-600/50' : 'bg-slate-200/50 border-slate-300 text-slate-600 hover:bg-slate-300/50'
+          ]"
+        >
+          Previous
+        </button>
+        <span :class="isDark ? 'text-slate-400' : 'text-slate-500'">Page {{ currentPage }} of {{ totalPages }}</span>
+        <button
+          @click="nextPage"
+          :disabled="currentPage >= totalPages"
+          :class="[
+            'px-4 py-2 rounded-lg disabled:opacity-50 border',
+            isDark ? 'bg-slate-700/50 border-slate-700 text-slate-300 hover:bg-slate-600/50' : 'bg-slate-200/50 border-slate-300 text-slate-600 hover:bg-slate-300/50'
+          ]"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+    <!-- Modals -->
       <ConfirmModal
-        :is-open="isDeleteModalOpen"
-        title="Confirm Deletion"
-        message="Are you sure you want to delete this user? This action cannot be undone."
-        @confirm="deleteUser"
-        @cancel="closeDeleteModal"
+        :is-open="isStatusModalOpen"
+        :title="selectedUser?.enabled ? 'Deactivate User' : 'Activate User'"
+        :message="selectedUser?.enabled 
+          ? 'Are you sure you want to deactivate this user? They will no longer be able to log in.'
+          : 'Are you sure you want to activate this user? They will regain access to the system.'"
+        @confirm="confirmToggleStatus"
+        @cancel="closeStatusModal"
       />
       <PromptModal
         :is-open="isWarningModalOpen"
@@ -119,14 +283,15 @@
         @submit="sendWarning"
         @cancel="closeWarningModal"
       />
-    </div>
   </template>
   
   <script setup>
   import { ref, onMounted, computed, watch } from 'vue';
   import { useAuthStore } from '../stores/auth';
   import { useRouter, useRoute } from 'vue-router';
-  import { Trash2, AlertCircle, Edit3 } from 'lucide-vue-next';
+  import { UserRole } from '../types/UserRole';
+  import { useThemeStore } from '../stores/theme';
+  import {  AlertCircle, Edit3 , UserRoundCheck, UserRoundX, X, Lock } from 'lucide-vue-next';
   import { MagnifyingGlassIcon } from '@heroicons/vue/20/solid';
   import { apiClient } from '../api';
   import ConfirmModal from '../components/ConfirmModal.vue';
@@ -139,8 +304,11 @@
   const showSuccessMessage = ref(false);
   const showErrorMessage = ref(false);
 
-  const isDeleteModalOpen = ref(false);
+  const themeStore = useThemeStore();
+  const isDark = computed(() => themeStore.isDark);
+
   const isWarningModalOpen = ref(false);
+  const isStatusModalOpen = ref(false);
   const selectedUserId = ref(null);
 
   // Search and Filter State
@@ -176,8 +344,9 @@
   // Success message text
   const successMessageText = computed(() => {
     if (route.query.roleUpdateSuccess === 'true') return 'User role updated successfully!';
-    if (route.query.userDeleted === 'true') return 'User deleted successfully!';
     if (route.query.warningSent === 'true') return 'Warning sent successfully!';
+    if (route.query.status === 'activated') return 'User activated successfully!';
+    if (route.query.status === 'deactivated') return 'User deactivated successfully!';
     return '';
   });
 
@@ -186,7 +355,10 @@
     () => route.query,
     (newQuery) => {
       // Show success message
-      if (['roleUpdateSuccess', 'userDeleted', 'warningSent'].some(key => newQuery[key] === 'true')) {
+      if (
+        ['roleUpdateSuccess', 'userDeleted', 'warningSent'].some(key => newQuery[key] === 'true') ||
+        ['activated', 'deactivated'].includes(newQuery.status)
+      ) {
         showSuccessMessage.value = true;
         setTimeout(() => {
           showSuccessMessage.value = false;
@@ -212,9 +384,17 @@
       const response = await apiClient.get('/admin/users', {
         headers: { Authorization: `Bearer ${authStore.accessToken}` }
       });
-      users.value = response.data;
+
+      // Ensure response.data is an array, fallback to empty array if not
+      if (Array.isArray(response.data)) {
+        users.value = response.data;
+      } else {
+        console.warn('API did not return an array of users:', response.data);
+        users.value = [];
+      }
     } catch (error) {
       console.error('Failed to fetch users:', error);
+      users.value = []; // Always fallback to empty array
       router.push({ 
         name: 'manage-users',
         query: { error: 'Failed to load user list' }
@@ -224,22 +404,32 @@
 
   // Computed property for filtered users
   const filteredUsers = computed(() => {
-    return users.value.filter((user) => {
-      // Match search query (case-insensitive)
+    const userList = Array.isArray(users.value) ? users.value : [];
+    return userList.filter((user) => {
       const matchesSearch = !searchQuery.value || user.name?.toLowerCase().includes(searchQuery.value.toLowerCase());
-      // Match role filter
-      const matchesRole = selectedRoleFilter.value === 'All' || user.role.toLowerCase() === selectedRoleFilter.value;
+      const matchesRole = selectedRoleFilter.value === 'All' || user.role?.toLowerCase() === selectedRoleFilter.value;
       return matchesSearch && matchesRole;
     });
   });
 
   // Roles for filters
-  const roles = ['All', 'user', 'contributor'];
+  const roles = ['All', 'admin', 'contributor', 'user'];
 
-  // Open Delete Modal
-  const openDeleteModal = (userId) => {
-    selectedUserId.value = userId;
-    isDeleteModalOpen.value = true;
+  const selectedUser = computed(() => {
+    return users.value.find(u => u.id === selectedUserId.value);
+  });
+
+  // Open modal function
+  const openStatusModal = (userId) => {
+    // Ensure selectedUserId is a number
+    selectedUserId.value = Number(userId);
+    isStatusModalOpen.value = true;
+  };
+
+  // Close modal function
+  const closeStatusModal = () => {
+    selectedUserId.value = null;
+    isStatusModalOpen.value = false;
   };
 
   // Close Delete Modal
@@ -248,26 +438,45 @@
     isDeleteModalOpen.value = false;
   };
   
-  // Delete user handler
-  const deleteUser = async () => {
+  // Confirm action handler
+  const confirmToggleStatus = async () => {
     try {
-      await apiClient.delete(`/admin/users/${selectedUserId.value}`, {
+      // Get current status before update
+      const currentUser = users.value.find(u => u.id === selectedUserId.value);
+      const wasEnabled = currentUser?.enabled;
+
+      await apiClient.patch(`/admin/users/${selectedUserId.value}/toggle-enable`, {}, {
         headers: { Authorization: `Bearer ${authStore.accessToken}` }
       });
-      users.value = users.value.filter(u => u.id !== selectedUserId.value);
-      router.push({ 
-        name: 'manage-users', 
-        query: { userDeleted: 'true' } 
+
+      // Update local state
+      users.value = users.value.map(user => {
+        if (user.id === selectedUserId.value) {
+          return { ...user, enabled: !user.enabled };
+        }
+        return user;
       });
+
+      // Determine new status
+      const newStatus = wasEnabled ? 'deactivated' : 'activated';
+      router.push({ name: 'manage-users', query: { status: newStatus } });
     } catch (error) {
-      console.error('Failed to delete user:', error);
-      router.push({ 
-        name: 'manage-users', 
-        query: { error: 'Failed to delete user' }
-      });
+      console.error('Failed to toggle user status:', error);
+      router.push({ name: 'manage-users', query: { error: 'Failed to update user status' } });
     } finally {
-      closeDeleteModal();
+      closeStatusModal();
     }
+  };
+
+  const getStatusLabel = (user) => {
+    return user.enabled ? 'Active' : 'Inactive';
+  };
+
+  const statusDotClass = (user) => {
+    return {
+      'bg-emerald-500': user.enabled,
+      'bg-red-500': !user.enabled
+    };
   };
 
   // Open Warning Modal
@@ -311,19 +520,10 @@
       ? `${apiUrl}${user.avatarUrl}` 
       : '';
   };
-  
+
   // Initials helper
   const initials = (user) => {
-    return user.name
-      ? user.name.split(' ').map(n => n[0]).join('').toUpperCase()
-      : '';
+    return user.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase() : ''
   };
-  
-  // Role styling helper
-  const roleStyle = (role) => {
-    return {
-      'bg-orange-500/10 text-orange-500': role === 'CONTRIBUTOR',
-      'bg-blue-500/10 text-blue-500': role === 'USER'
-    };
-  };
+
   </script>

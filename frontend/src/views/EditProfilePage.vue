@@ -1,22 +1,30 @@
 <template>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div class="bg-slate-800/50 rounded-2xl p-6 border border-slate-700 space-y-8">
+    <div :class="[
+      'rounded-2xl p-6 border shadow-xl space-y-8 transition-colors duration-200',
+      isDark 
+        ? 'bg-slate-800/50 border-slate-700' 
+        : 'bg-slate-100/90 border-slate-300'
+    ]">
       <!-- Avatar Section -->
       <div class="flex items-center space-x-6">
         <div class="relative">
           <img 
             v-if="avatarPreview" 
             :src="avatarPreview" 
-            class="w-32 h-32 rounded-2xl object-cover border-4 border-slate-800 shadow-xl"
+            class="w-32 h-32 rounded-2xl object-cover border-4 shadow-xl"
+            :class="isDark ? 'border-slate-800' : 'border-white'"
           >
           <img 
             v-else-if="avatarUrl" 
             :src="avatarUrl" 
-            class="w-32 h-32 rounded-2xl object-cover border-4 border-slate-800 shadow-xl"
+            class="w-32 h-32 rounded-2xl object-cover border-4 shadow-xl"
+            :class="isDark ? 'border-slate-800' : 'border-white'"
           >
           <div 
             v-else 
-            class="w-32 h-32 rounded-2xl bg-slate-700 border-4 border-slate-800 flex items-center justify-center shadow-xl"
+            :class="isDark ? 'bg-slate-700 border-slate-800' : 'bg-slate-200 border-white'" 
+            class="w-32 h-32 rounded-2xl border-4 flex items-center justify-center shadow-xl"
           >
             <span class="text-4xl font-bold">{{ userInitials }}</span>
           </div>
@@ -26,100 +34,155 @@
             @change="handleAvatarUpload" 
             class="absolute inset-0 opacity-0 cursor-pointer"
           >
-          <div class="absolute -bottom-2 -right-2 w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center border-4 border-slate-800">
-            <Camera class="w-4 h-4 text-white" />
+          <div 
+            class="absolute -bottom-2 -right-2 w-8 h-8 rounded-lg flex items-center justify-center border-4"
+            :class="isDark ? 'bg-emerald-500 border-slate-800 text-white' : 'bg-emerald-600 border-white text-white'"
+          >
+            <Camera class="w-4 h-4" />
           </div>
         </div>
         <button 
           @click="triggerAvatarUpload"
-          class="px-4 py-2 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-colors"
+          :class="[
+            'px-4 py-2 rounded-xl  hover:bg-emerald-600 transition-colors',
+            isDark ? 'bg-emerald-500 text-white hover:bg-emerald-600' : 'bg-emerald-600 text-white hover:bg-emerald-700'
+          ]"
         >
           Upload Avatar
         </button>
       </div>
+
       <!-- Modern Form -->
       <form @submit.prevent="handleSubmit" class="space-y-8">
         <!-- Full Name -->
         <div class="relative">
-          <label for="fullName" class="block mb-2 text-slate-400">Full Name :</label>
+          <label for="fullName" class="block mb-2 transition-colors duration-200" :class="isDark ? 'text-slate-400' : 'text-slate-500'">Full Name :</label>
           <div class="relative">
-            <User class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+            <User 
+              class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 pointer-events-none" 
+              :class="isDark ? 'text-slate-400' : 'text-slate-500'"
+            />
             <input
               id="fullName"
               v-model="formData.name"
               type="text"
-              class="w-full pl-10 pr-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              :class="[
+                'w-full pl-10 pr-4 py-3 rounded-lg placeholder-slate-400 focus:outline-none focus:ring-2 transition-colors border',
+                isDark 
+                  ? 'bg-slate-700/50 border-slate-600 text-white focus:ring-emerald-500' 
+                  : 'bg-slate-200/70 border-slate-300 text-slate-900 focus:ring-emerald-600'
+              ]"
               placeholder="Enter your full name (e.g., John Doe)"
             />
           </div>
-          <div v-if="fullNameErrors.length" class="mt-2 text-slate-400 text-sm">
+          <div v-if="fullNameErrors.length" class="mt-2" :class="isDark ? 'text-slate-400' : 'text-slate-500'">
             {{ fullNameErrors.join(', ') }}
           </div>
         </div>
+
         <!-- Bio -->
         <div class="relative">
-          <label for="bio" class="block mb-2 text-slate-400">Bio :</label>
+          <label for="bio" class="block mb-2 transition-colors duration-200" :class="isDark ? 'text-slate-400' : 'text-slate-500'">Bio :</label>
           <div class="relative">
-            <BookOpen class="absolute left-3 top-3 w-5 h-5 text-slate-400 pointer-events-none" />
+            <BookOpen 
+              class="absolute left-3 top-3 w-5 h-5 pointer-events-none" 
+              :class="isDark ? 'text-slate-400' : 'text-slate-500'"
+            />
             <textarea
               id="bio"
               v-model="formData.bio"
               rows="4"
-              class="w-full pl-10 pr-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              :class="[
+                'w-full pl-10 pr-4 py-3 rounded-xl placeholder-slate-400 focus:outline-none focus:ring-2 transition-colors border',
+                isDark 
+                  ? 'bg-slate-700/50 border-slate-600 text-white focus:ring-emerald-500' 
+                  : 'bg-slate-200/70 border-slate-300 text-slate-900 focus:ring-emerald-600'
+              ]"
               placeholder="Tell us about yourself"
             ></textarea>
           </div>
         </div>
+
         <!-- Social Links -->
         <div class="space-y-6">
+          <!-- GitHub -->
           <div class="relative">
-            <label for="github" class="block mb-2 text-slate-400">GitHub Username :</label>
+            <label for="github" class="block mb-2 transition-colors duration-200" :class="isDark ? 'text-slate-400' : 'text-slate-500'">GitHub Username :</label>
             <div class="relative">
-              <Github class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+              <Github 
+                class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 pointer-events-none" 
+                :class="isDark ? 'text-slate-400' : 'text-slate-500'"
+              />
               <input
                 id="github"
                 v-model="formData.github"
                 type="text"
-                class="w-full pl-10 pr-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                :class="[
+                  'w-full pl-10 pr-4 py-3 rounded-xl placeholder-slate-400 focus:outline-none focus:ring-2 transition-colors border',
+                  isDark 
+                    ? 'bg-slate-700/50 border-slate-600 text-white focus:ring-emerald-500' 
+                    : 'bg-slate-200/70 border-slate-300 text-slate-900 focus:ring-emerald-600'
+                ]"
                 placeholder="GitHub username"
               />
             </div>
           </div>
+
+          <!-- LinkedIn -->
           <div class="relative">
-            <label for="linkedin" class="block mb-2 text-slate-400">LinkedIn Profile URL :</label>
+            <label for="linkedin" class="block mb-2 transition-colors duration-200" :class="isDark ? 'text-slate-400' : 'text-slate-500'">LinkedIn Profile URL :</label>
             <div class="relative">
-              <Linkedin class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+              <Linkedin 
+                class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 pointer-events-none" 
+                :class="isDark ? 'text-slate-400' : 'text-slate-500'"
+              />
               <input
                 id="linkedin"
                 v-model="formData.linkedin"
                 type="text"
-                class="w-full pl-10 pr-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                :class="[
+                  'w-full pl-10 pr-4 py-3 rounded-xl placeholder-slate-400 focus:outline-none focus:ring-2 transition-colors border',
+                  isDark 
+                    ? 'bg-slate-700/50 border-slate-600 text-white focus:ring-emerald-500' 
+                    : 'bg-slate-200/70 border-slate-300 text-slate-900 focus:ring-emerald-600'
+                ]"
                 placeholder="LinkedIn profile URL"
               />
             </div>
           </div>
         </div>
+
         <!-- Location and Phone Number Section -->
         <div class="space-y-6">
+          <!-- Location -->
           <div class="relative">
-            <label for="location" class="block mb-2 text-slate-400">Location :</label>
+            <label for="location" class="block mb-2 transition-colors duration-200" :class="isDark ? 'text-slate-400' : 'text-slate-500'">Location :</label>
             <input
               id="location"
               v-model="locationSearchQuery"
               type="text"
               placeholder="Search for your location"
-              class="w-full pl-4 pr-10 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              :class="[
+                'w-full pl-4 pr-10 py-3 rounded-xl placeholder-slate-400 focus:outline-none focus:ring-2 transition-colors border',
+                isDark 
+                  ? 'bg-slate-700/50 border-slate-600 text-white focus:ring-emerald-500' 
+                  : 'bg-slate-200/70 border-slate-300 text-slate-900 focus:ring-emerald-600'
+              ]"
               @input="filterLocations"
             />
             <!-- Dropdown List -->
             <div
               v-if="filteredLocations.length > 0"
-              class="absolute z-10 w-full mt-2 bg-slate-800 border border-slate-700 rounded-xl shadow-lg max-h-48 overflow-y-auto"
+              :class="isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'"
+              class="absolute z-10 w-full mt-2 border rounded-xl shadow-lg max-h-48 overflow-y-auto"
             >
               <div
                 v-for="country in filteredLocations"
                 :key="country.code"
-                class="px-4 py-2 cursor-pointer hover:bg-slate-700/50 text-white" 
+                :class="[
+                  'px-4 py-2 cursor-pointer transition-colors',
+                  isDark ? 'hover:bg-slate-700/50 text-white' : 'hover:bg-slate-100/50 text-slate-900'
+                ]" 
                 @click="selectLocation(country)"
               >
                 {{ country.emoji }} {{ country.name }}
@@ -127,23 +190,26 @@
             </div>
           </div>
 
-          <!-- Phone Number Section -->
+          <!-- Phone Number -->
           <div class="flex items-center space-x-2">
-            <!-- Label for Phone Number -->
-            <label for="phoneCode" class="block mb-2 text-slate-400">Phone Number :</label>
-
-            <!-- Phone Code Select and Input -->
+            <label for="phoneCode" class="block mb-2 transition-colors duration-200" :class="isDark ? 'text-slate-400' : 'text-slate-500'">Phone Number :</label>
             <div class="flex items-center space-x-2">
               <!-- Phone Code Select -->
               <select
                 id="phoneCode"
                 v-model="selectedPhoneCountry"
-                class="w-36 px-3 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                :class="[
+                  'w-36 px-3 py-3 rounded-xl focus:outline-none focus:ring-2 transition-colors border',
+                  isDark 
+                    ? 'bg-slate-700/50 border-slate-600 text-white focus:ring-emerald-500' 
+                    : 'bg-slate-200/70 border-slate-300 text-slate-900 focus:ring-emerald-600'
+                ]"
               >
                 <option
                   v-for="country in countries"
                   :key="country.code"
                   :value="country"
+                  :class="isDark ? 'bg-slate-800' : 'bg-white'"
                 >
                   {{ country.emoji }} {{ country.phone }}
                 </option>
@@ -154,19 +220,31 @@
                 v-model="formData.phoneNumber"
                 type="tel"
                 :placeholder="phonePlaceholder"
-                class="flex-1 px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                :class="[
+                  'flex-1 px-4 py-3 rounded-xl placeholder-slate-400 focus:outline-none focus:ring-2 transition-colors border',
+                  isDark 
+                    ? 'bg-slate-700/50 border-slate-600 text-white focus:ring-emerald-500' 
+                    : 'bg-slate-200/70 border-slate-300 text-slate-900 focus:ring-emerald-600'
+                ]"
               />
             </div>
-            <div v-if="phoneErrors.length" class="mt-2 text-slate-400 text-sm">
+            <div v-if="phoneErrors.length" class="mt-2" :class="isDark ? 'text-slate-400' : 'text-slate-500'">
               {{ phoneErrors.join(', ') }}
             </div>
           </div>
         </div>
+
         <!-- Submit Button -->
         <button
           type="submit"
           :disabled="isSubmitting"
-          class="w-full flex items-center justify-center px-6 py-3 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-emerald-500 hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          :class="[
+            'w-full flex items-center justify-center px-6 py-3 rounded-xl shadow-sm text-sm font-medium transition-colors duration-200',
+            'focus:outline-none focus:ring-2 focus:ring-offset-2',
+            isDark 
+              ? 'bg-emerald-500 text-white hover:bg-emerald-600 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed' 
+              : 'bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed'
+          ]"
         >
           <Save class="w-5 h-5 mr-2" />
           Save Changes
@@ -180,6 +258,7 @@
 import { ref, reactive, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
+import { useThemeStore } from '../stores/theme';
 import { Camera, Save, User, BookOpen, Github, Linkedin } from 'lucide-vue-next';
 import { countries as countriesData } from 'countries-list'; 
 import { isValidPhoneNumber, parsePhoneNumber, formatNumber, type CountryCode } from 'libphonenumber-js';
@@ -187,6 +266,9 @@ import { isValidPhoneNumber, parsePhoneNumber, formatNumber, type CountryCode } 
 const router = useRouter();
 const authStore = useAuthStore();
 const user = computed(() => authStore.user);
+
+const themeStore = useThemeStore();
+const isDark = computed(() => themeStore.isDark);
 
 interface Country {
   name: string;

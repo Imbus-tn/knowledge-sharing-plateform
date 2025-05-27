@@ -1,10 +1,13 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { apiClient } from '../api'
+import { useAuthStore } from './auth'
 import type { Post } from '../types/post'
+import { UserRole } from '../types/UserRole'
 
 export const useFeedStore = defineStore('feed', () => {
   // State
+  const authStore = useAuthStore();
   const posts = ref<Post[]>([])
   const loading = ref<boolean>(false)
   const error = ref<string | null>(null)
@@ -12,7 +15,7 @@ export const useFeedStore = defineStore('feed', () => {
   // Getters
   const getPostById = computed(() => {
     return (postId: string) => {
-      return posts.value.find(post => post.id === postId)
+      return posts.value.find((post: Post) => post.id === postId)
     }
   })
 
@@ -21,41 +24,62 @@ export const useFeedStore = defineStore('feed', () => {
   // Fetch all posts
   const fetchPosts = async (): Promise<void> => {
     try {
-      loading.value = true
-      const response = await apiClient.get('/content/posts')
-      
-      let postData: Post[] = []
+      loading.value = true;
+      const response = await apiClient.get('/content/posts');
 
-      if (response.data && Array.isArray(response.data)) {
+      let postData: Post[] = [];
+
+      if (Array.isArray(response.data)) {
         postData = response.data.map(post => ({
           ...post,
           id: String(post.id),
           reactions: post.reactions || [],
           favorites: post.favorites || [],
           comments: post.comments || [],
-          shares: post.shares || []
-        }))
-      } else if (response.data && response.data.content && Array.isArray(response.data.content)) {
+          shares: post.shares || [],
+          author: {
+            id: post.authorId ?? 'unknown',
+            name: post.authorName ?? 'Anonymous',
+            email: post.authorEmail ?? '',
+            role: post.authorRole ?? UserRole.USER
+          }
+        }));
+      } else if (response.data && Array.isArray(response.data.content)) {
         postData = response.data.content.map(post => ({
-          ...post,
           id: String(post.id),
+          content: post.content || '',
+          imageUrl: post.imageUrl || undefined,
+          author: {
+            id: post.author.id ?? 'unknown',
+            name: post.author.name ?? 'Anonymous',
+            email: post.author.email ?? '',
+            role: post.author.role ?? UserRole.USER,
+            avatarUrl: post.author.avatarUrl
+          },
+          createdAt: post.createdAt || new Date().toISOString(),
           reactions: post.reactions || [],
           favorites: post.favorites || [],
           comments: post.comments || [],
           shares: post.shares || []
-        }))
+        }));
       } else {
-        postData = []
+        postData = [];
       }
 
-      posts.value = postData
+      postData.sort((a, b) => {
+        const dateA = new Date(a.createdAt).getTime();
+        const dateB = new Date(b.createdAt).getTime();
+        return dateB - dateA;
+      });
+
+      posts.value = postData;
     } catch (err: any) {
-      error.value = err.message || 'Failed to load posts'
-      console.error("Error fetching posts:", err)
+      error.value = err.message || 'Failed to load posts';
+      console.error("Error fetching posts:", err);
     } finally {
-      loading.value = false
+      loading.value = false;
     }
-  }
+  };
 
   // Create a new post
   const createPost = async (postData: { content: string, imageUrl?: string }): Promise<void> => {
@@ -71,9 +95,11 @@ export const useFeedStore = defineStore('feed', () => {
         content: backendPost.content || postData.content,
         imageUrl: backendPost.imageUrl || postData.imageUrl || undefined,
         author: {
-          id: authStore.user?.id || 'unknown',
-          name: authStore.user?.name || 'Anonymous',
-          email: authStore.user?.email || ''
+          id: backendPost.authorId ?? authStore.user?.id ?? 'unknown',
+          name: backendPost.authorName || authStore.user?.name || 'Anonymous',
+          email: backendPost.authorEmail || authStore.user?.email || '',
+          role: authStore.user?.role || UserRole.USER,
+          avatarUrl: backendPost.author?.avatarUrl ?? authStore.user?.avatarUrl ?? undefined
         },
         createdAt: backendPost.createdAt || new Date().toISOString(),
         updatedAt: undefined,
@@ -81,7 +107,7 @@ export const useFeedStore = defineStore('feed', () => {
         favorites: backendPost.favorites || [],
         comments: backendPost.comments || [],
         shares: backendPost.shares || []
-      }
+      };
 
       // ✅ Validate minimal required fields
       if (newPost.id && newPost.content) {
@@ -114,7 +140,7 @@ export const useFeedStore = defineStore('feed', () => {
         shares: response.data.shares || []
       }
 
-      const index = posts.value.findIndex(p => p.id === postId)
+      const index = posts.value.findIndex((p: Post) => p.id === postId)
       if (index !== -1) {
         posts.value[index] = updatedPost
       }
@@ -146,7 +172,7 @@ export const useFeedStore = defineStore('feed', () => {
   const toggleFavorite = async (postId: string): Promise<void> => {
     try {
       await apiClient.post(`/content/posts/${postId}/favorite`, {})
-      const post = posts.value.find(p => p.id === postId)
+      const post = posts.value.find((p: Post) => p.id === postId)
       if (post) {
         post.isFavorite = !post.isFavorite
       }
@@ -163,7 +189,7 @@ export const useFeedStore = defineStore('feed', () => {
       const response = await apiClient.post(`/content/posts/${postId}/react`, { type: reactionType })
       const newReaction = response.data
 
-      const post = posts.value.find(p => p.id === postId)
+      const post = posts.value.find((p: Post) => p.id === postId)
       if (post && newReaction) {
         post.reactions.push(newReaction)
       }
@@ -181,7 +207,7 @@ export const useFeedStore = defineStore('feed', () => {
       const response = await apiClient.post(`/content/posts/${postId}/comment`, { text })
       const newComment = response.data
 
-      const post = posts.value.find(p => p.id === postId)
+      const post = posts.value.find((p: Post) => p.id === postId)
       if (post && newComment) {
         post.comments.push(newComment)
       }

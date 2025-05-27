@@ -28,7 +28,11 @@
           <div class="w-full max-w-md">
             <div class="text-center mb-8">
               <div class="flex justify-center mb-6">
-                <BookOpen class="w-12 h-12 text-emerald-500" />
+                <img 
+                  :src="logoIcon" 
+                  alt="Imbus Knowledge Logo" 
+                  class="w-20 h-20"
+                />
               </div>
               <h2 class="text-3xl font-bold text-white mb-2">Complete Registration</h2>
               <p class="text-slate-400">Set up your account to get started</p>
@@ -162,7 +166,8 @@
   <script setup lang="ts">
   import { ref, reactive, computed, onMounted, watch } from 'vue';
   import { useRouter, useRoute } from 'vue-router';
-  import { BookOpen, User, Mail, Lock, Eye, EyeOff, UserPlus } from 'lucide-vue-next';
+  import { User, Mail, Lock, Eye, EyeOff, UserPlus } from 'lucide-vue-next';
+  import logoIcon from '../../assets/logo-icon.png'
   import { useAuthStore } from '../../stores/auth';
   import { UserRole } from '../../types/UserRole';
   

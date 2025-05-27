@@ -1,8 +1,9 @@
 import { defineStore } from 'pinia';
+import axios from 'axios';
 
 export interface Notification {
   id: string;
-  type: 'post' | 'comment' | 'reaction' | 'mention' | 'system';
+  type: 'post' | 'reaction' | 'comment' | 'favorite' | 'system';
   message: string;
   read: boolean;
   createdAt: string;
@@ -12,136 +13,104 @@ export interface Notification {
     initials: string;
     avatar?: string;
   };
+  postId?: string;
+  postTitle?: string;
+  userId?: string; // To identify if the post belongs to current user
 }
 
 interface NotificationState {
   notifications: Notification[];
   unreadCount: number;
   showNotificationPanel: boolean;
+  currentUserId: string | null;
 }
 
 export const useNotificationStore = defineStore('notification', {
   state: (): NotificationState => ({
     notifications: [],
     unreadCount: 0,
-    showNotificationPanel: false
+    showNotificationPanel: false,
+    currentUserId: null
   }),
 
   actions: {
+    setCurrentUser(userId: string) {
+      this.currentUserId = userId;
+    },
+
+    async fetchNotifications() {
+      try {
+        const res = await axios.get('/api/notifications');
+        this.notifications = res.data.map((n: any) => ({
+          ...n,
+          createdAt: n.createdAt || new Date().toISOString(),
+          read: n.read || false
+        }));
+        this.calculateUnreadCount();
+      } catch (err) {
+        console.error('Failed to fetch notifications:', err);
+      }
+    },
+
     addNotification(notification: Omit<Notification, 'id' | 'createdAt' | 'read'>) {
+      // Skip notifications not in allowed types
+      if (!['post', 'reaction', 'comment', 'favorite', 'system'].includes(notification.type)) return;
+
+      // Filter post notifications: only show others' posts
+      if (notification.type === 'post' && notification.userId === this.currentUserId) return;
+
+      // Filter reactions, comments, and favorites: only show if on current user's post
+      if (['reaction', 'comment', 'favorite'].includes(notification.type) && notification.userId !== this.currentUserId) return;
+
       const newNotification: Notification = {
         id: Date.now().toString(),
         createdAt: new Date().toISOString(),
         read: false,
         ...notification
       };
-      
+
       this.notifications.unshift(newNotification);
       this.calculateUnreadCount();
-      
-      // Show browser notification if supported
-      this.showBrowserNotification(newNotification);
     },
-    
+
     markAsRead(id: string) {
       const notification = this.notifications.find(n => n.id === id);
-      if (notification) {
+      if (notification && !notification.read) {
         notification.read = true;
         this.calculateUnreadCount();
       }
     },
-    
+
     markAllAsRead() {
-      this.notifications.forEach(notification => {
-        notification.read = true;
-      });
+      this.notifications.forEach(n => n.read = true);
       this.calculateUnreadCount();
     },
-    
+
     removeNotification(id: string) {
       this.notifications = this.notifications.filter(n => n.id !== id);
       this.calculateUnreadCount();
     },
-    
+
     calculateUnreadCount() {
       this.unreadCount = this.notifications.filter(n => !n.read).length;
     },
-    
+
     toggleNotificationPanel() {
       this.showNotificationPanel = !this.showNotificationPanel;
     },
-    
+
     closeNotificationPanel() {
       this.showNotificationPanel = false;
     },
-    
+
     showBrowserNotification(notification: Notification) {
       if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification('Imbus Knowledge', {
+        const title = notification.user ? notification.user.name : 'New Notification';
+        new Notification(title, {
           body: notification.message,
-          icon: '/vite.svg' // Replace with your app icon
+          icon: '/vite.svg'
         });
       }
-    },
-    
-    // Mock method to generate sample notifications for testing
-    generateMockNotifications() {
-      const mockNotifications: Omit<Notification, 'id' | 'createdAt' | 'read'>[] = [
-        {
-          type: 'post',
-          message: 'Sarah Kim published a new article: "Building Scalable APIs with GraphQL"',
-          link: '/feed',
-          user: {
-            name: 'Sarah Kim',
-            initials: 'SK'
-          }
-        },
-        {
-          type: 'comment',
-          message: 'Mike Johnson commented on your article "Vue.js Best Practices 2024"',
-          link: '/feed',
-          user: {
-            name: 'Mike Johnson',
-            initials: 'MJ'
-          }
-        },
-        {
-          type: 'reaction',
-          message: 'Alex Chen liked your comment on "Kubernetes Deployment Strategies"',
-          link: '/discussions',
-          user: {
-            name: 'Alex Chen',
-            initials: 'AC'
-          }
-        },
-        {
-          type: 'mention',
-          message: 'You were mentioned in a discussion about Docker networking',
-          link: '/discussions',
-          user: {
-            name: 'Lisa Wong',
-            initials: 'LW'
-          }
-        },
-        {
-          type: 'system',
-          message: 'Your account role has been updated to Contributor',
-          link: '/profile'
-        }
-      ];
-      
-      // Add mock notifications with different timestamps
-      mockNotifications.forEach((notification, index) => {
-        const date = new Date();
-        date.setMinutes(date.getMinutes() - (index * 30)); // Spread out the timestamps
-        
-        this.addNotification(notification);
-        
-        // Mark some as read
-        if (index > 2) {
-          this.markAsRead(this.notifications[0].id);
-        }
-      });
     }
   }
 });

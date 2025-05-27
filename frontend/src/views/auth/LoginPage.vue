@@ -29,10 +29,14 @@
           <div class="w-full max-w-md">
             <div class="text-center mb-8">
               <div class="flex justify-center mb-6">
-                <BookOpen class="w-12 h-12 text-emerald-500" />
+                <img 
+                  :src="logoIcon" 
+                  alt="Imbus Knowledge Logo" 
+                  class="w-20 h-20"
+                />
               </div>
-              <h2 class="text-3xl font-bold text-white mb-2">Welcome back</h2>
-              <p class="text-slate-400">Sign in to continue to Imbus Knowledge</p>
+              <h2 class="text-3xl font-bold text-white mb-2">Sign In</h2>
+              <p class="text-slate-400">Please enter your email address and password!</p>
             </div>
   
             <!-- Success Message -->
@@ -140,7 +144,8 @@
   <script setup lang="ts">
   import { watch, ref } from 'vue';
   import { useRouter, useRoute } from 'vue-router';
-  import { BookOpen, Mail, Lock, Eye, EyeOff, LogIn } from 'lucide-vue-next';
+  import { Mail, Lock, Eye, EyeOff, LogIn } from 'lucide-vue-next';
+  import logoIcon from '../../assets/logo-icon.png'
   import { useAuthStore } from '../../stores/auth';
   import { useNotificationStore } from '../../stores/notification';
   
