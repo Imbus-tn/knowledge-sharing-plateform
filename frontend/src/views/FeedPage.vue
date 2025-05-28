@@ -292,26 +292,6 @@
             </div>
           </div>
           <!-- Posts Feed -->
-          <div v-if="!feedStore.loading && posts.length === 0" 
-            :class="[
-              'text-center py-10 transition-colors duration-200',
-              isDark ? 'text-slate-400' : 'text-slate-500'
-            ]">
-            No posts yet. Be the first to share something!
-          </div>
-
-          <div v-if="feedStore.loading" class="text-center py-10">
-            <div class="animate-spin rounded-full h-8 w-8 mx-auto"
-              :class="isDark ? 'border-t-2 border-b-2 border-emerald-500' : 'border-t-2 border-b-2 border-emerald-600'">
-            </div>
-          </div>
-
-          <div v-if="feedStore.error" 
-            class="text-center py-4"
-            :class="isDark ? 'text-red-400' : 'text-red-600'">
-            {{ feedStore.error }}
-          </div>
-
           <div class="space-y-6">
             <div 
               v-for="post in posts" 
@@ -325,158 +305,198 @@
             >
               <!-- Post Header -->
               <div class="p-4">
-                <div class="flex items-center space-x-3">
+                <div class="flex items-center justify-between">
                   <!-- Author Info -->
-                  <div class="flex-shrink-0">
-                    <img 
-                      v-if="post.author.avatarUrl" 
-                      :src="getAuthorAvatar(post.author)" 
-                      alt="Author Avatar"
-                      class="w-12 h-12 rounded-full object-cover"
-                      :class="isDark ? 'border-2 border-slate-800' : 'border-2 border-white'"
-                    >
-                    <div 
-                      v-else 
-                      :class="[
-                        'w-12 h-12 rounded-full flex items-center justify-center transition-colors',
-                        isDark ? 'border-2 border-slate-800' : 'border-2 border-white'
-                      ]"
-                    >
-                      <span class="text-white font-medium">{{ post.author.initials }}</span>
+                  <div class="flex items-center space-x-3">
+                    <div class="flex-shrink-0">
+                      <img 
+                        v-if="post.author.avatarUrl" 
+                        :src="getAuthorAvatar(post.author)" 
+                        alt="Author Avatar"
+                        class="w-12 h-12 rounded-full object-cover"
+                        :class="isDark ? 'border-2 border-slate-800' : 'border-2 border-white'"
+                      >
+                      <div 
+                        v-else 
+                        :class="[
+                          'w-12 h-12 rounded-full flex items-center justify-center transition-colors',
+                          isDark ? 'bg-emerald-500' : 'bg-emerald-600'
+                        ]"
+                      >
+                        <span class="text-white font-medium">{{ post.author.initials }}</span>
+                      </div>
+                    </div>
+                    <div class="min-w-0">
+                      <p :class="[
+                        'font-medium transition-colors',
+                        isDark ? 'text-white' : 'text-slate-900'
+                      ]">
+                        {{ post.author.name }}
+                      </p>
+                      <p :class="[
+                        'text-xs transition-colors',
+                        isDark ? 'text-slate-500' : 'text-slate-400'
+                      ]">
+                        {{ formatTime(post.createdAt) }}
+                      </p>
                     </div>
                   </div>
-                  <div class="flex-1 min-w-0">
-                    <p :class="[
-                      'font-medium transition-colors',
-                      isDark ? 'text-white' : 'text-slate-900'
-                    ]">
-                      {{ post.author.name }}
-                    </p>
-                    <p :class="[
-                      'text-xs transition-colors',
-                      isDark ? 'text-slate-500' : 'text-slate-400'
-                    ]">
-                      {{ formatTime(post.createdAt) }}
-                    </p>
-                  </div>
-                  <!-- More Menu -->
-                  <div class="relative">
-                    <button 
-                      @click="togglePostMenu(post.id)"
-                      :class="[
-                        'p-2 rounded-lg transition-all duration-200',
-                        isDark 
-                          ? 'text-slate-400 hover:text-white hover:bg-slate-700/50' 
-                          : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/50'
-                      ]"
-                      :data-post-menu-button="post.id"
-                    >
-                      <MoreVertical class="w-5 h-5" />
-                    </button>
-                    <!-- Dropdown Menu -->
-                    <div v-if="activePostMenu === post.id"
-                      :class="[
-                        'absolute right-0 mt-2 w-48 rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 z-50',
-                        isDark ? 'bg-slate-800' : 'bg-white'
-                      ]"
-                      :data-post-menu="post.id"
-                    >
-                      <div class="py-1">
-                        <button 
-                          @click="editPost(post)"
-                          :class="[
-                            'flex items-center w-full px-4 py-2 text-sm transition-colors',
-                            isDark 
-                              ? 'text-slate-300 hover:bg-slate-700 hover:text-white' 
-                              : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                          ]"
-                        >
-                          <Edit 
-                            :class="isDark ? 'text-slate-400' : 'text-slate-500'" 
-                            class="w-4 h-4 mr-2" 
-                          />
-                          Edit Post
-                        </button>
-                        <button 
-                          @click="savePost(post)"
-                          :class="[
-                            'flex items-center w-full px-4 py-2 text-sm transition-colors',
-                            isDark 
-                              ? 'text-slate-300 hover:bg-slate-700 hover:text-white' 
-                              : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                          ]"
-                        >
-                          <Bookmark 
-                            :class="isDark ? 'text-slate-400' : 'text-slate-500'" 
-                            class="w-4 h-4 mr-2" 
-                          />
-                          Save Post
-                        </button>
-                        <button 
-                          @click="sharePost(post)"
-                          :class="[
-                            'flex items-center w-full px-4 py-2 text-sm transition-colors',
-                            isDark 
-                              ? 'text-slate-300 hover:bg-slate-700 hover:text-white' 
-                              : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                          ]"
-                        >
-                          <Share2 
-                            :class="isDark ? 'text-slate-400' : 'text-slate-500'" 
-                            class="w-4 h-4 mr-2" 
-                          />
-                          Share Post
-                        </button>
-                        <button 
-                          @click="reportPost(post)"
-                          :class="[
-                            'flex items-center w-full px-4 py-2 text-sm transition-colors',
-                            isDark 
-                              ? 'text-slate-300 hover:bg-slate-700 hover:text-white' 
-                              : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                          ]"
-                        >
-                          <Flag 
-                            :class="isDark ? 'text-slate-400' : 'text-slate-500'" 
-                            class="w-4 h-4 mr-2" 
-                          />
-                          Report Post
-                        </button>
-                        <button 
-                          @click="deletePost(post)"
-                          :class="[
-                            'flex items-center w-full px-4 py-2 text-sm transition-colors',
-                            isDark 
-                              ? 'text-red-400 hover:bg-slate-700' 
-                              : 'text-red-600 hover:bg-slate-100'
-                          ]"
-                        >
-                          <Trash2 
-                            :class="isDark ? 'text-red-400' : 'text-red-600'" 
-                            class="w-4 h-4 mr-2" 
-                          />
-                          Delete Post
-                        </button>
+
+                  <!-- Tags & More Menu -->
+                  <div class="flex items-center space-x-2">
+                    <!-- Post Tags -->
+                    <div class="flex flex-wrap gap-1">
+                      <div 
+                        v-for="tag in post.tags" 
+                        :key="tag.name" 
+                        :class="[
+                          'px-2 py-1 text-xs rounded-full transition-colors',
+                          tag.color
+                        ]"
+                      >
+                        {{ tag.name }}
+                      </div>
+                    </div>
+
+                    <!-- More Menu -->
+                    <div class="relative">
+                      <button 
+                        @click="togglePostMenu(post.id)"
+                        :class="[
+                          'p-2 rounded-lg transition-all duration-200',
+                          isDark 
+                            ? 'text-slate-400 hover:text-white hover:bg-slate-700/50' 
+                            : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/50'
+                        ]"
+                        :data-post-menu-button="post.id"
+                      >
+                        <MoreVertical class="w-5 h-5" />
+                      </button>
+                      
+                      <!-- Dropdown Menu -->
+                      <div 
+                        v-if="activePostMenu === post.id"
+                        :class="[
+                          'absolute right-0 mt-2 w-48 rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 z-50',
+                          isDark ? 'bg-slate-800' : 'bg-white'
+                        ]"
+                        :data-post-menu="post.id"
+                      >
+                        <div class="py-1">
+                          <button 
+                            @click="editPost(post)"
+                            :class="[
+                              'flex items-center w-full px-4 py-2 text-sm transition-colors',
+                              isDark 
+                                ? 'text-slate-300 hover:bg-slate-700 hover:text-white' 
+                                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                            ]"
+                          >
+                            <Edit 
+                              :class="isDark ? 'text-slate-400' : 'text-slate-500'" 
+                              class="w-4 h-4 mr-2" 
+                            />
+                            Edit Post
+                          </button>
+                          <button 
+                            @click="savePost(post)"
+                            :class="[
+                              'flex items-center w-full px-4 py-2 text-sm transition-colors',
+                              isDark 
+                                ? 'text-slate-300 hover:bg-slate-700 hover:text-white' 
+                                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                            ]"
+                          >
+                            <Bookmark 
+                              :class="isDark ? 'text-slate-400' : 'text-slate-500'" 
+                              class="w-4 h-4 mr-2" 
+                            />
+                            Save Post
+                          </button>
+                          <button 
+                            @click="sharePost(post)"
+                            :class="[
+                              'flex items-center w-full px-4 py-2 text-sm transition-colors',
+                              isDark 
+                                ? 'text-slate-300 hover:bg-slate-700 hover:text-white' 
+                                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                            ]"
+                          >
+                            <Share2 
+                              :class="isDark ? 'text-slate-400' : 'text-slate-500'" 
+                              class="w-4 h-4 mr-2" 
+                            />
+                            Share Post
+                          </button>
+                          <button 
+                            @click="reportPost(post)"
+                            :class="[
+                              'flex items-center w-full px-4 py-2 text-sm transition-colors',
+                              isDark 
+                                ? 'text-slate-300 hover:bg-slate-700 hover:text-white' 
+                                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                            ]"
+                          >
+                            <Flag 
+                              :class="isDark ? 'text-slate-400' : 'text-slate-500'" 
+                              class="w-4 h-4 mr-2" 
+                            />
+                            Report Post
+                          </button>
+                          <button 
+                            @click="openDeleteConfirmation(post)"
+                            :class="[
+                              'flex items-center w-full px-4 py-2 text-sm transition-colors',
+                              isDark ? 'text-red-400 hover:bg-slate-700' : 'text-red-600 hover:bg-slate-100'
+                            ]"
+                          >
+                            <Trash2 :class="isDark ? 'text-red-400' : 'text-red-600'" class="w-4 h-4 mr-2" />
+                            Delete Post
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-                <p 
-                  class="mt-3 transition-colors"
-                  :class="isDark ? 'text-slate-300' : 'text-slate-700'"
-                >
+
+                <!-- Post Title & Content -->
+                <h3 :class="[
+                  'text-xl font-semibold mt-4 mb-2 transition-colors',
+                  isDark ? 'text-white' : 'text-slate-900'
+                ]">
+                  {{ post.title }}
+                </h3>
+                <p :class="[
+                  'transition-colors',
+                  isDark ? 'text-slate-300' : 'text-slate-700'
+                ]">
                   {{ post.content }}
                 </p>
               </div>
-              <!-- Post Image -->
-              <img 
-                v-if="post.imageUrl"
-                :src="post.imageUrl" 
-                :alt="post.content"
-                class="w-full h-96 object-cover"
-              />
-              <!-- Post Stats -->
-              <!-- Post Stats -->
+
+              <!-- Post Media -->
+              <div v-if="post.imageUrl || post.videoUrl" class="relative">
+                <img 
+                  v-if="post.imageUrl"
+                  :src="post.imageUrl" 
+                  :alt="post.title"
+                  class="w-full h-96 object-cover"
+                />
+                <div v-if="post.videoUrl" class="relative">
+                  <img 
+                    :src="post.videoUrl.thumbnail" 
+                    :alt="post.title"
+                    class="w-full h-96 object-cover"
+                  />
+                  <div class="absolute inset-0 flex items-center justify-center bg-black/50">
+                    <button class="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors">
+                      <Play class="w-8 h-8 text-white" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Post Stats (Original) -->
               <div class="px-4 py-2">
                 <div class="flex items-center justify-between">
                   <div class="flex items-center space-x-1">
@@ -484,15 +504,24 @@
                       <div 
                         v-for="reaction in getTopReactions(post)" 
                         :key="reaction.emoji"
-                        class="w-7 h-7 rounded-full bg-slate-700/50 flex items-center justify-center text-lg ring-2 ring-slate-800 transform hover:scale-110 transition-transform cursor-pointer"
+                        :class="[
+                          'w-7 h-7 rounded-full flex items-center justify-center text-lg transform hover:scale-110 transition-transform cursor-pointer',
+                          isDark ? 'bg-slate-700/50' : 'bg-slate-200/50' // Conditional background
+                        ]"
                         :title="`${reaction.count} ${reaction.emoji}`"
                       >
                         {{ reaction.emoji }}
                       </div>
                     </div>
-                    <span class="text-slate-400 text-sm ml-2">{{ getTotalReactions(post) }}</span>
+                    <span :class="[
+                      'text-sm ml-2 transition-colors',
+                      isDark ? 'text-slate-400' : 'text-slate-500'
+                    ]">
+                      {{ getTotalReactions(post) }}
+                    </span>
                   </div>
-                  <div class="flex items-center space-x-4 text-sm text-slate-400">
+                  <div class="flex items-center space-x-4 text-sm" 
+                    :class="isDark ? 'text-slate-400' : 'text-slate-500'">
                     <div class="flex items-center">
                       <MessageSquare class="w-4 h-4 mr-1" />
                       <span>{{ post.comments }}</span>
@@ -505,7 +534,7 @@
                 </div>
               </div>
 
-              <!-- Post Actions -->
+              <!-- Post Actions (Original) -->
               <div class="px-4 py-2 relative">
                 <div class="flex items-center justify-between">
                   <!-- Like Button with Reaction Options -->
@@ -525,6 +554,7 @@
                         <ThumbsUp class="w-5 h-5" />
                         <span>Like</span>
                       </button>
+                      
                       <!-- Reaction Picker Popup -->
                       <div 
                         v-if="showReactionPickerFor === post.id"
@@ -551,6 +581,7 @@
                       </div>
                     </div>
                   </div>
+                  
                   <button 
                     class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors"
                     :class="[
@@ -588,312 +619,468 @@
                   </button>
                 </div>
               </div>
+            </div>
           </div>
-        </div>
       </div>
     </div>  
   </div>
       <!-- Create Post Modal -->
       <CreatePostModal 
-        v-if="showCreateModal"
+        :is-open="showCreateModal"
         @close="showCreateModal = false"
         @submit="handleCreatePost"
+      />
+
+      <ConfirmModal
+        :is-open="isDeleteConfirmOpen"
+        title="Delete Post"
+        :message="`Are you sure you want to delete this post? This action cannot be undone.`"
+        @confirm="confirmDeletePost"
+        @cancel="closeDeleteConfirmation"
+      />
+
+      <ReportModal
+        :is-open="showReportModal"
+        entity-type="post"
+        @close="showReportModal = false"
+        @submit="handleReport"
       />
   </template>
   
   <script setup lang="ts">
-  import { ref, computed, onMounted, onUnmounted, onActivated } from 'vue';
-  import { useAuthStore } from '../stores/auth';
-  import { useThemeStore } from '../stores/theme';
-  import { 
-    Image, Video, FileText, MoreVertical, ThumbsUp,
-    MessageSquare, Share2, User, LayoutDashboard, Bookmark,
-    Code, Server, Cloud, Database, Terminal, Lock, Star,
-    Edit, Flag, Trash2
-  } from 'lucide-vue-next';
-  import CreatePostModal from '../components/CreatePostModal.vue';
-  import { useNotificationStore } from '../stores/notification';
-  import { useFeedStore } from '../stores/feed';
+import { ref, computed, onMounted, onUnmounted, onActivated } from 'vue';
+import { useAuthStore } from '../stores/auth';
+import { useThemeStore } from '../stores/theme';
+import { 
+  Image, Video, FileText, MoreVertical, ThumbsUp,
+  MessageSquare, Share2, User, LayoutDashboard, Bookmark,
+  Code, Server, Cloud, Database, Terminal, Lock, Star,
+  Edit, Flag, Trash2, Play
+} from 'lucide-vue-next'; // Added Play icon for video posts
+import CreatePostModal from '../components/CreatePostModal.vue';
+import { useNotificationStore } from '../stores/notification';
+import ConfirmModal from '../components/ConfirmModal.vue';
+import ReportModal from '../components/ReportModal.vue';
+
+// Mock data structure
+interface Post {
+  id: string;
+  title: string;
+  content: string;
+  imageUrl: string | null;
+  videoUrl?: {
+    url: string;
+    thumbnail: string;
+  };
+  author: {
+    id: number;
+    name: string;
+    initials: string;
+    avatarUrl?: string;
+  };
+  createdAt: string;
+  comments: number;
+  shares: number;
+  isFavorite: boolean;
+  reactions: {
+    emoji: string;
+    count: number;
+    users: string[];
+  }[];
+  tags: {
+    name: string;
+    color: string;
+  }[];
+}
+
+
+// Use mock data in development
+const useMockData = import.meta.env.VITE_USE_MOCK_DATA === 'true';
+
+// Mock posts data
+const mockPosts = ref<Post[]>([
+  {
+    id: '1',
+    title: "Building Scalable Microservices with Kubernetes",
+    content: "In this comprehensive guide, we'll explore best practices for designing and deploying microservices architecture using Kubernetes...",
+    imageUrl: "https://images.unsplash.com/photo-1667372393119-3d4c48d07fc9?auto=format&fit=crop&w=1600&q=80 ",
+    author: {
+      id: 1,
+      name: "Habib ben hassine",
+      initials: "HB",
+      avatarUrl: new URL('../assets/kakashi.png', import.meta.url).href 
+    },
+    createdAt: "2025-05-10T08:30:00.000Z",
+    comments: 12,
+    shares: 8,
+    isFavorite: false,
+    reactions: [
+      { emoji: '👍', count: 24, users: ['user1', 'user2'] },
+      { emoji: '🚀', count: 15, users: ['user3'] },
+      { emoji: '💡', count: 10, users: ['user4'] }
+    ],
+    tags: [
+      { name: "DevOps", color: "bg-purple-500/10 text-purple-500" },
+      { name: "Kubernetes", color: "bg-blue-500/10 text-blue-500" }
+    ]
+  },
+  {
+    id: '2',
+    title: "Vue 3 Performance Optimization Techniques",
+    content: "Learn advanced techniques for optimizing your Vue 3 applications, including Composition API best practices and rendering strategies...",
+    imageUrl: null,
+    videoUrl: {
+      url: "https://example.com/videos/vue3-performance.mp4 ",
+      thumbnail: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?auto=format&fit=crop&w=1600&q=80 "
+    },
+    author: {
+      id: 2,
+      name: "Dhaker bellil",
+      initials: "DB",
+      avatarUrl: new URL('../assets/obito.png', import.meta.url).href 
+    },
+    createdAt: "2025-05-09T15:45:00.000Z",
+    comments: 18,
+    shares: 12,
+    isFavorite: true,
+    reactions: [
+      { emoji: '👍', count: 32, users: ['user5', 'user6'] },
+      { emoji: '🔥', count: 20, users: ['user7'] },
+      { emoji: '❤️', count: 15, users: ['user8'] }
+    ],
+    tags: [
+      { name: "Vue.js", color: "bg-emerald-500/10 text-emerald-500" },
+      { name: "Performance", color: "bg-amber-500/10 text-amber-500" }
+    ]
+  },
+  {
+    id: '3',
+    title: "The Future of Web Development in 2025",
+    content: "Exploring upcoming trends and technologies that will shape the web development landscape in the coming years, from AI integration to new frameworks...",
+    imageUrl: null,
+    author: {
+      id: 3,
+      name: "roua ben hassine",
+      initials: "RB",
+      avatarUrl: new URL('../assets/mikasa.png', import.meta.url).href 
+    },
+    createdAt: "2025-05-09T10:15:00.000Z",
+    comments: 25,
+    shares: 15,
+    isFavorite: false,
+    reactions: [
+      { emoji: '👍', count: 18, users: ['user11', 'user12'] },
+      { emoji: '🤔', count: 9, users: ['user13'] }
+    ],
+    tags: [
+      { name: "Web Development", color: "bg-green-500/10 text-green-500" },
+      { name: "Trends", color: "bg-pink-500/10 text-pink-500" }
+    ]
+  }
+]);
+
+// Auth and theme stores
+const authStore = useAuthStore();
+const themeStore = useThemeStore();
+const user = computed(() => authStore.user);
+const notificationStore = useNotificationStore();
+const showCreateModal = ref(false);
+const activePostMenu = ref<string | null>(null);
+const isDark = computed(() => themeStore.isDark);
+
+// Use mock data
+const posts = computed(() => mockPosts.value);
+
+// Avatar handling
+const avatarUrl = computed(() => {
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080'; 
+  return user.value?.avatarUrl
+    ? `${apiUrl}${user.value.avatarUrl}`
+    : '';
+});
+
+// User initials
+const userInitials = computed(() => {
+  return user.value?.name
+    ? user.value.name.split(' ').map(n => n[0]).join('').toUpperCase()
+    : '';
+});
+
+// Get author avatar URL
+const getAuthorAvatar = (author: any) => {
+  const rawUrl = author?.avatarUrl;
+
+  if (!rawUrl) return ''; // Fallback if no avatar
+
+  // Use raw URL if it's already absolute (http/https) or a local path (/...)
+  if (rawUrl.startsWith('http') || rawUrl.startsWith('/')) {
+    return rawUrl;
+  }
+
+  // Otherwise, prepend API base URL (for future remote images)
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+  return `${apiUrl}${rawUrl}`;
+};
+
+// Quick stats
+const quickStats = computed(() => ({
+  articlesPublished: user.value?.articlesCount || 24,
+  totalViews: user.value?.totalViews || '12.4K',
+  contributions: user.value?.contributions || 156
+}));
+
+// Trending topics data
+const trendingTopics = [
+  { tag: 'vue3', icon: Code, posts: '2.5k posts' },
+  { tag: 'devops', icon: Server, posts: '1.8k posts' },
+  { tag: 'cloud', icon: Cloud, posts: '1.2k posts' },
+  { tag: 'database', icon: Database, posts: '956 posts' },
+  { tag: 'terminal', icon: Terminal, posts: '845 posts' },
+  { tag: 'security', icon: Lock, posts: '734 posts' }
+];
+
+// Reaction state
+const showReactionPickerFor = ref<string | null>(null);
+const reactionPickerPosition = ref({ top: '0px', left: '0px' });
+const reactionEmojis = ['👍', '❤️', '😊', '🎉', '🤔', '👏', '🔥', '💯', '✨', '🙌'];
+let reactionHideTimer: number | null = null;
+
+const isDeleteConfirmOpen = ref(false);
+const selectedPostToDelete = ref<Post | null>(null);
+
+const openDeleteConfirmation = (post: Post) => {
+  selectedPostToDelete.value = post;
+  activePostMenu.value = null;
+  isDeleteConfirmOpen.value = true;
+};
+
+const closeDeleteConfirmation = () => {
+  isDeleteConfirmOpen.value = false;
+  selectedPostToDelete.value = null;
+};
+
+const confirmDeletePost = () => {
+  if (!selectedPostToDelete.value) return;
   
-  const authStore = useAuthStore();
-  const feedStore = useFeedStore();
-  const themeStore = useThemeStore();
-  const user = computed(() => authStore.user);
-  const notificationStore = useNotificationStore();
-  const showCreateModal = ref(false);
-  const activePostMenu = ref<string | null>(null);
-  const posts = computed(() => feedStore.posts);
-  const isDark = computed(() => themeStore.isDark);
+  if (useMockData) {
+    // For mock data
+    mockPosts.value = mockPosts.value.filter(
+      post => post.id !== selectedPostToDelete.value?.id
+    );
+  } else {
+    // For production: call your API
+    // const feedStore = useFeedStore();
+    // await feedStore.deletePost(selectedPostToDelete.value.id);
+  }
   
-  // Avatar handling
-  const avatarUrl = computed(() => {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080'; 
-    return user.value?.avatarUrl
-      ? `${apiUrl}${user.value.avatarUrl}`
-      : '';
+  notificationStore.addNotification({
+    type: 'system',
+    message: 'Post deleted successfully',
+    link: '/feed'
   });
-
-  // User initials
-  const userInitials = computed(() => {
-    return user.value?.name
-      ? user.value.name.split(' ').map(n => n[0]).join('').toUpperCase()
-      : '';
-  });
-
-  const getAuthorAvatar = (author: any) => {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-    const rawUrl = author?.avatarUrl;
-
-    if (!rawUrl) return '';
-
-    // Avoid duplicating the base URL if already absolute
-    if (rawUrl.startsWith('http')) {
-      return rawUrl;
-    }
-
-    return `${apiUrl}${rawUrl}`;
-  };
   
-  // Quick stats
-  const quickStats = computed(() => ({
-    articlesPublished: user.value?.articlesCount || 24,
-    totalViews: user.value?.totalViews || '12.4K',
-    contributions: user.value?.contributions || 156
-  }));
+  closeDeleteConfirmation();
+};
+
+// Get top reactions for a post
+const getTopReactions = (post: Post) => {
+  return post.reactions
+    .sort((a: any, b: any) => b.count - a.count)
+    .slice(0, 3);
+};
+
+// Get total reactions for a post
+const getTotalReactions = (post: Post) => {
+  return post.reactions.reduce((total: number, reaction: any) => total + reaction.count, 0);
+};
+
+// Reaction handlers
+const handleReactionMouseLeave = () => {
+  reactionHideTimer = window.setTimeout(() => {
+    showReactionPickerFor.value = null;
+  }, 300);
+};
+
+const cancelReactionHideTimer = () => {
+  if (reactionHideTimer) {
+    clearTimeout(reactionHideTimer);
+    reactionHideTimer = null;
+  }
+};
+
+const hideReactionPicker = () => {
+  reactionHideTimer = window.setTimeout(() => {
+    showReactionPickerFor.value = null;
+  }, 300);
+};
+
+const showReactionPicker = (post: Post, event?: MouseEvent) => {
+  if (event) {
+    const rect = (event.target as HTMLElement).getBoundingClientRect();
+    reactionPickerPosition.value = {
+      top: `${rect.bottom + 5}px`,
+      left: `${rect.left}px`
+    };
+  }
+  showReactionPickerFor.value = post.id;
+};
+
+const hasReacted = (post: Post, emoji: string) => {
+  const reaction = post.reactions.find((r: any) => r.emoji === emoji);
+  return reaction?.users.includes('user1') || false;
+};
+
+const addReaction = (post: Post, emoji: string) => {
+  let reaction = post.reactions.find((r: any) => r.emoji === emoji);
   
-  // Trending topics data
-  const trendingTopics = [
-    { tag: 'vue3', icon: Code, posts: '2.5k posts' },
-    { tag: 'devops', icon: Server, posts: '1.8k posts' },
-    { tag: 'cloud', icon: Cloud, posts: '1.2k posts' },
-    { tag: 'database', icon: Database, posts: '956 posts' },
-    { tag: 'terminal', icon: Terminal, posts: '845 posts' },
-    { tag: 'security', icon: Lock, posts: '734 posts' }
-  ];
-
-  const showReactionPickerFor = ref<string | null>(null);
-  const reactionPickerPosition = ref({ top: '0px', left: '0px' });
-  const reactionEmojis = ['👍', '❤️', '😊', '🎉', '🤔', '👏', '🔥', '💯', '✨', '🙌'];
-  let reactionHideTimer: number | null = null;
-  
-  
-
-  const getTopReactions = (post: Post) => {
-    return post.reactions
-      .sort((a: any, b: any) => b.count - a.count)
-      .slice(0, 3);
-  };
-
-  const getTotalReactions = (post: Post) => {
-    return post.reactions.reduce((total: number, reaction: any) => total + reaction.count, 0);
-  };
-
-
-  const handleReactionMouseLeave = () => {
-    reactionHideTimer = window.setTimeout(() => {
-      showReactionPickerFor.value = null;
-    }, 300);
-  };
-
-  const cancelReactionHideTimer = () => {
-    if (reactionHideTimer) {
-      clearTimeout(reactionHideTimer);
-      reactionHideTimer = null;
-    }
-  };
-
-  const hideReactionPicker = () => {
-    reactionHideTimer = window.setTimeout(() => {
-      showReactionPickerFor.value = null;
-    }, 300);
-  };
-
-  const showReactionPicker = (post: Post, event?: MouseEvent) => {
-    if (event) {
-      const rect = (event.target as HTMLElement).getBoundingClientRect();
-      reactionPickerPosition.value = {
-        top: `${rect.bottom + 5}px`,
-        left: `${rect.left}px`
-      };
-    }
-    showReactionPickerFor.value = post.id;
-  };
-
-  const hasReacted = (post: Post, emoji: string) => {
-    const reaction = post.reactions.find((r: any) => r.emoji === emoji);
-    return reaction?.users.includes('user1');
-  };
-
-  const addReaction = (post: Post, emoji: string) => {
-    let reaction = post.reactions.find((r: any) => r.emoji === emoji);
-    if (reaction) {
-      if (reaction.users.includes('user1')) {
-        reaction.count--;
-        reaction.users = reaction.users.filter((u: string) => u !== 'user1');
-        if (reaction.count === 0) {
-          post.reactions = post.reactions.filter((r: any) => r.emoji !== emoji);
-        }
-      } else {
-        reaction.count++;
-        reaction.users.push('user1');
+  if (reaction) {
+    if (reaction.users.includes('user1')) {
+      reaction.count--;
+      reaction.users = reaction.users.filter((u: string) => u !== 'user1');
+      if (reaction.count === 0) {
+        post.reactions = post.reactions.filter((r: any) => r.emoji !== emoji);
       }
     } else {
-      post.reactions.push({
-        emoji,
-        count: 1,
-        users: ['user1']
-      });
+      reaction.count++;
+      reaction.users.push('user1');
     }
-    showReactionPickerFor.value = null;
-  };
+  } else {
+    post.reactions.push({
+      emoji,
+      count: 1,
+      users: ['user1']
+    });
+  }
   
-  // Time formatting
-  const formatTime = (timestamp: string) => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.round(diffMs / 60000);
-    if (diffMins < 1) {
-      return 'Just now';
-    } else if (diffMins < 60) {
-      return `${diffMins}m`;
-    } else if (diffMins < 1440) {
-      return `${Math.floor(diffMins / 60)}h`;
-    } else {
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    }
-  };
+  showReactionPickerFor.value = null;
+};
 
-  const togglePostMenu = (postId: string): void => {
-    activePostMenu.value = activePostMenu.value === postId ? null : postId;
-  };
+// Time formatting
+const formatTime = (timestamp: string) => {
+  const date = new Date(timestamp);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.round(diffMs / 60000);
   
+  if (diffMins < 1) {
+    return 'Just now';
+  } else if (diffMins < 60) {
+    return `${diffMins}m`;
+  } else if (diffMins < 1440) {
+    return `${Math.floor(diffMins / 60)}h`;
+  } else {
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }
+};
+
+// Post menu toggle
+const togglePostMenu = (postId: string): void => {
+  activePostMenu.value = activePostMenu.value === postId ? null : postId;
+};
+
+// Post management actions
+const editPost = (post: Post) => {
+  activePostMenu.value = null;
+  notificationStore.addNotification({
+    type: 'system',
+    message: 'Post editing coming soon!',
+    link: '/feed'
+  });
+};
+
+const savePost = (post: Post) => {
+  activePostMenu.value = null;
+  notificationStore.addNotification({
+    type: 'system',
+    message: 'Post saved to your bookmarks',
+    link: '/feed'
+  });
+};
+
+const sharePost = (post: Post) => {
+  activePostMenu.value = null;
+};
+
+
+// Show/Hide Report Modal
+const showReportModal = ref(false);
+
+// Method to open the Report Modal
+const reportPost = (post: Post) => {
+  showReportModal.value = true;
+};
+
+// Handle report submission
+const handleReport = (reportData:any) => {
+  console.log('Report submitted:', reportData);
   
-  // Post management actions
-  const editPost = (post: Post) => {
-    activePostMenu.value = null;
+  // Notify admin or send to backend
+  notificationStore.addNotification({
+    type: 'system',
+    message: `You've reported this post successfully.`,
+    link: '/feed'
+  });
+
+  showReportModal.value = false;
+};
+
+// Favorite toggle
+const toggleFavorite = (post: Post) => {
+  post.isFavorite = !post.isFavorite;
+  
+  // Notify the post's author if someone favorited their post
+  if (post.author.id !== authStore.user?.id && post.isFavorite) {
     notificationStore.addNotification({
-      type: 'system',
-      message: 'Post editing coming soon!',
-      link: '/feed'
+      type: 'favorite',
+      message: `${authStore.user?.name} favorited your post "${post.title}"`,
+      link: `/post/${post.id}`,
+      userId: post.author.id,
+      postId: post.id,
+      user: {
+        name: authStore.user?.name || 'User',
+        initials: authStore.user?.initials || 'U'
+      }
     });
-  };
+  }
+};
 
-  const savePost = (post: Post) => {
-    activePostMenu.value = null;
-    notificationStore.addNotification({
-      type: 'system',
-      message: 'Post saved to your bookmarks',
-      link: '/feed'
-    });
-  };
+// Create post handler with mock data support
+const handleCreatePost = (newPost: Post) => {
+  mockPosts.value.unshift(newPost);
+  showCreateModal.value = false;
+}
 
-  const sharePost = (post: Post) => {
-    activePostMenu.value = null;
-  };
-
-  const reportPost = (post: Post) => {
-    activePostMenu.value = null;
-    notificationStore.addNotification({
-      type: 'system',
-      message: 'Post reported. Thank you for helping keep our community safe.',
-      link: '/feed'
-    });
-  };
-
-  const deletePost = (post: Post) => {
-    activePostMenu.value = null;
-    notificationStore.addNotification({
-      type: 'system',
-      message: 'Post deleted successfully',
-      link: '/feed'
-    });
-  };
-
-  const toggleFavorite = (post: Post) => {
-    post.isFavorite = !post.isFavorite;
+// Handle click outside to close dropdowns
+const handleClickOutside = (event: MouseEvent): void => {
+  if (activePostMenu.value) {
+    const menu = document.querySelector(`[data-post-menu="${activePostMenu.value}"]`);
+    const button = document.querySelector(`[data-post-menu-button="${activePostMenu.value}"]`);
     
-    // Notify the post's author if someone favorited their post
-    if (post.author.id !== authStore.user?.id && post.isFavorite) {
-      notificationStore.addNotification({
-        type: 'favorite',
-        message: `${authStore.user?.name} favorited your post "${post.title}"`,
-        link: `/post/${post.id}`,
-        userId: post.author.id,
-        postId: post.id,
-        user: {
-          name: authStore.user?.name || 'User',
-          initials: authStore.user?.initials || 'U'
-        }
-      });
+    if (
+      menu && 
+      !menu.contains(event.target as Node) &&
+      button &&
+      !button.contains(event.target as Node)
+    ) {
+      activePostMenu.value = null;
     }
-  };
-  
-  // Create post handler
-  const handleCreatePost = async (postData: Post) => {
-    try {
-      await feedStore.createPost({
-        content: postData.content,
-        imageUrl: postData.imageUrl
-      });
-    } catch (error) {
-      console.error("Failed to create post:", error);
-      notificationStore.addNotification({
-        type: 'error',
-        message: 'Failed to create post.',
-        link: '/feed'
-      });
-    } finally {
-      showCreateModal.value = false;
-    }
-  };
-  
-  // Handle click outside to close dropdowns
-  const handleClickOutside = (event: MouseEvent): void => {
-    if (activePostMenu.value) {
-        const menu = document.querySelector(`[data-post-menu="${activePostMenu.value}"]`);
-        const button = document.querySelector(`[data-post-menu-button="${activePostMenu.value}"]`);
-        if (
-        menu && 
-        !menu.contains(event.target as Node) &&
-        button &&
-        !button.contains(event.target as Node)
-        ) {
-        activePostMenu.value = null;
-        }
-    }
-  };
+  }
+};
 
-  const fetchPostsIfNeeded = () => {
-    if (!user.value) {
-      const interval = setInterval(() => {
-        if (user.value) {
-          clearInterval(interval);
-          feedStore.fetchPosts();
-        }
-      }, 200);
-    } else {
-      feedStore.fetchPosts();
-    }
-  };
+// Lifecycle hooks
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside);
+});
 
-  
-  onMounted(() => {
-    document.addEventListener('click', handleClickOutside);
-    fetchPostsIfNeeded();
-  });
-  
-  onUnmounted(() => {
-    document.removeEventListener('click', handleClickOutside);
-  });
-  onUnmounted(() => {
-    if (reactionHideTimer) {
-      clearTimeout(reactionHideTimer);
-    }
-  });
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
+  if (reactionHideTimer) {
+    clearTimeout(reactionHideTimer);
+  }
+});
 
-  onActivated(fetchPostsIfNeeded);
-  </script>
+onActivated(() => {});
+</script>
   <style>
   .transform {
     transition: transform 0.2s ease-in-out;

@@ -159,6 +159,10 @@ export const useAuthStore = defineStore('auth', () => {
     return user.value?.role === UserRole.ADMIN;
    });
 
+   const isContributor = computed(() => {
+    return user.value?.role === UserRole.CONTRIBUTOR;
+   });
+
    const register = async(token: string, registerData:{
     name: string,
     password: string,
@@ -233,6 +237,7 @@ export const useAuthStore = defineStore('auth', () => {
     updateProfile,
     uploadAvatar,
     fetchUser,
+    isContributor,
     isAdmin,
     isAuthenticated
   }

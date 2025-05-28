@@ -16,9 +16,11 @@
     "country-list": "^2.3.0",
     "country-list-with-dial-code-and-flag": "^5.1.0",
     "date-fns": "^3.3.1",
+    "flag-icons": "^7.3.2",
     "libphonenumber-js": "^1.12.6",
     "lucide-vue-next": "^0.344.0",
     "pinia": "^2.1.7",
+    "twemoji": "^14.0.2",
     "vue": "^3.4.21",
     "vue-router": "^4.3.0"
   },
