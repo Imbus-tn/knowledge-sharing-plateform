@@ -216,7 +216,14 @@ public class AuthService {
         }
         
         // Update only non-null fields
-        if (request.bio() != null) user.setBio(request.bio());
+        if (request.bio() != null && !request.bio().equals(user.getBio())) {
+            if (request.bio().length() > 1000) { // adjust max length as needed
+                Map<String, List<String>> errors = new HashMap<>();
+                errors.put("bio", List.of("Bio must be 1000 characters or less"));
+                throw new ValidationException(errors);
+            }
+            user.setBio(request.bio());
+        }
         if (request.location() != null) user.setLocation(request.location());
         if (request.phoneNumber() != null) user.setPhoneNumber(request.phoneNumber());
         if (request.github() != null) user.setGithub(request.github());
