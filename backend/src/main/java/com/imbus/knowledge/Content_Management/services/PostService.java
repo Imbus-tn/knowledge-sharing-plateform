@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -33,13 +35,19 @@ public class PostService {
         User author = getUserById(userId);
 
         Post post = new Post();
+        post.setTitle(request.getTitle());
         post.setContent(request.getContent());
         post.setImageUrl(request.getImageUrl());
+        post.setVideoUrl(request.getVideoUrl());
+        post.setVideoThumbnail(request.getVideoThumbnail());
+        post.setTags(request.getTags().stream()
+                .map(tag -> new Tag(tag.getName(), tag.getColor()))
+                .collect(Collectors.toList()));
         post.setAuthor(author);
         post.setCreatedAt(LocalDateTime.now());
 
         Post savedPost = postRepository.save(post);
-        return PostResponse.from(savedPost); // Map to DTO
+        return PostResponse.from(savedPost, false, author);
     }
 
     private Post getPostEntityById(Long postId) {
@@ -47,38 +55,54 @@ public class PostService {
                 .orElseThrow(() -> new PostNotFoundException(postId));
     }
 
-    public PostResponse getPostById(Long postId) {
+    public PostResponse getPostById(Long postId, Long userId) {
         Post post = getPostEntityById(postId);
-        return PostResponse.from(post);
+        User user = getUserById(userId);
+        boolean isFavorite = favoriteRepository.existsByUser_IdAndPost_Id(userId, post.getId());
+
+        return PostResponse.from(post, isFavorite, user);
     }
 
-    public Page<PostResponse> getAllPosts(int page, int size) {
-        return postRepository.findAllWithDetails(PageRequest.of(page, size))
-                .map(PostResponse::from);
+    public Page<PostResponse> getAllPosts(int page, int size, Long userId) {
+        Pageable pageable = PageRequest.of(page, size);
+        User user = getUserById(userId);
+
+        // Use DTO projection to avoid dual bag fetch
+        Page<PostSummary> summaries = postRepository.findAllSummaries(pageable);
+
+        return summaries.map(summary -> {
+            boolean isFavorite = favoriteRepository.existsByUser_IdAndPost_Id(userId, summary.getId());
+            return PostResponse.fromSummary(summary, isFavorite);
+        });
     }
 
     public PostResponse updatePost(Long postId, CreatePostRequest request, Long userId) {
         Post post = getPostEntityById(postId);
+
         if (!post.getAuthor().getId().equals(userId)) {
             throw new SecurityException("You are not authorized to update this post.");
         }
 
+        post.setTitle(request.getTitle());
         post.setContent(request.getContent());
         post.setImageUrl(request.getImageUrl());
+        post.setVideoUrl(request.getVideoUrl());
+        post.setVideoThumbnail(request.getVideoThumbnail());
+        post.setTags(request.getTags().stream()
+                .map(tag -> new Tag(tag.getName(), tag.getColor()))
+                .collect(Collectors.toList()));
         post.setUpdatedAt(LocalDateTime.now());
 
-        return PostResponse.from(postRepository.save(post)); // Map to DTO
+        return PostResponse.from(postRepository.save(post), false, null);
     }
 
     @Transactional
     public void deletePost(Long postId, Long userId) {
         Post post = getPostEntityById(postId);
-
         if (!post.getAuthor().getId().equals(userId)) {
             throw new SecurityException("You are not authorized to delete this post.");
         }
-
-        postRepository.delete(post); // This will cascade delete related entities
+        postRepository.delete(post);
     }
 
     // ===== INTERACTIONS =====
@@ -87,11 +111,11 @@ public class PostService {
         Post post = getPostEntityById(postId);
         User user = getUserById(userId);
 
-        boolean alreadyFavorited = favoriteRepository.existsByUserAndPost(user, post);
+        // ✅ Handle Optional<Favorite>
+        Optional<Favorite> existingFavoriteOpt = favoriteRepository.findByUser_IdAndPost_Id(userId, postId);
 
-        if (alreadyFavorited) {
-            Favorite favorite = favoriteRepository.findByUserAndPost(user, post);
-            favoriteRepository.delete(favorite);
+        if (existingFavoriteOpt.isPresent()) {
+            favoriteRepository.delete(existingFavoriteOpt.get());
         } else {
             Favorite favorite = new Favorite();
             favorite.setUser(user);
@@ -103,18 +127,12 @@ public class PostService {
 
     public Page<PostResponse> getFavoritePostsByUserId(Long userId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
+        User user = getUserById(userId);
+        Page<Favorite> favoritesPage = favoriteRepository.findByUser_Id(userId, pageable);
 
-        // Get current user
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        // Get favorites for this user
-        Page<Favorite> favoritesPage = favoriteRepository.findByUser(user, pageable);
-
-        // Map to PostResponse
-        return favoritesPage.map(favorite -> {
-            Post post = favorite.getPost();
-            return PostResponse.from(post); // include userId to set isFavorite = true
+        return favoritesPage.map(fav -> {
+            Post post = fav.getPost();
+            return PostResponse.from(post, true, user);
         });
     }
 
@@ -123,9 +141,10 @@ public class PostService {
         Post post = getPostEntityById(postId);
         User user = getUserById(userId);
 
-        Reaction existingReaction = reactionRepository.findByUserAndPost(user, post);
+        Optional<Reaction> existingReactionOpt = reactionRepository.findByUserAndPost(user, post);
 
-        if (existingReaction != null) {
+        if (existingReactionOpt.isPresent()) {
+            Reaction existingReaction = existingReactionOpt.get();
             existingReaction.setType(request.getType());
             reactionRepository.save(existingReaction);
         } else {
@@ -147,11 +166,12 @@ public class PostService {
         comment.setPost(post);
         comment.setAuthor(user);
         comment.setCreatedAt(LocalDateTime.now());
-        comment.setParent(null); // Top-level comment
+        comment.setParent(null);
 
         Comment savedComment = commentRepository.save(comment);
         return CommentResponse.from(savedComment);
     }
+
 
     public CommentResponse replyToComment(Long commentId, CommentRequest request, Long userId) {
         Comment parent = getCommentById(commentId);
@@ -173,9 +193,10 @@ public class PostService {
         Comment comment = getCommentById(commentId);
         User user = getUserById(userId);
 
-        Reaction existingReaction = reactionRepository.findByUserAndComment(user, comment);
+        Optional<Reaction> existingReactionOpt = reactionRepository.findByUserAndComment(user, comment);
 
-        if (existingReaction != null) {
+        if (existingReactionOpt.isPresent()) {
+            Reaction existingReaction = existingReactionOpt.get();
             existingReaction.setType(request.getType());
             reactionRepository.save(existingReaction);
         } else {
@@ -190,13 +211,11 @@ public class PostService {
 
     public void reportPost(Long postId, ReportRequest request, User reporter) {
         Post post = getPostEntityById(postId);
-
         ReportedPost reportedPost = new ReportedPost();
         reportedPost.setPost(post);
         reportedPost.setReporter(reporter);
         reportedPost.setReason(request.getReason());
         reportedPost.setReportedAt(LocalDateTime.now());
-
         reportedPostRepository.save(reportedPost);
     }
 
@@ -208,7 +227,6 @@ public class PostService {
         share.setPost(post);
         share.setUser(user);
         share.setSharedAt(LocalDateTime.now());
-
         shareRepository.save(share);
     }
 
@@ -220,7 +238,7 @@ public class PostService {
     }
 
     private Comment getCommentById(Long commentId) {
-        return commentRepository.findByIdWithReplies(commentId)
+        return commentRepository.findByIdWithDetails(commentId)
                 .orElseThrow(() -> new RuntimeException("Comment not found"));
     }
 }

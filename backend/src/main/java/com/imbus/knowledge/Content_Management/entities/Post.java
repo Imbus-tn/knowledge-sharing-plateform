@@ -27,10 +27,16 @@ public class Post {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private String title;
+
     @Lob // Large text field
     private String content;
 
     private String imageUrl;
+
+    // Add Video URL support
+    private String videoUrl;
+    private String videoThumbnail;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "author_id")
@@ -54,4 +60,7 @@ public class Post {
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private List<Share> shares = new ArrayList<>();
+
+    @ElementCollection
+    private List<Tag> tags = new ArrayList<>();
 }

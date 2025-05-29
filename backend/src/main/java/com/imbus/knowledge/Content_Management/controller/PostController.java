@@ -33,16 +33,21 @@ public class PostController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<PostResponse> getPost(@PathVariable Long id) {
-        PostResponse post = postService.getPostById(id);
+    public ResponseEntity<PostResponse> getPost(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        Long userId = getUserIdFromUserDetails(userDetails);
+        PostResponse post = postService.getPostById(id, userId);
         return ResponseEntity.ok(post);
     }
 
     @GetMapping
     public ResponseEntity<Page<PostResponse>> getAllPosts(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        Page<PostResponse> posts = postService.getAllPosts(page, size);
+            @RequestParam(defaultValue = "10") int size,
+            @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        Long userId = getUserIdFromUserDetails(userDetails);
+        Page<PostResponse> posts = postService.getAllPosts(page, size, userId);
         return ResponseEntity.ok(posts);
     }
 
@@ -155,6 +160,6 @@ public class PostController {
     // ==== HELPER METHODS ====
 
     private Long getUserIdFromUserDetails(UserDetailsImpl userDetails) {
-        return userDetails.getUser().getId(); // Adjust based on actual implementation
+        return userDetails.getUser().getId();
     }
 }
