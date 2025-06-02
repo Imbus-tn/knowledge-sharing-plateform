@@ -1,5 +1,5 @@
 import { Client } from '@stomp/stompjs';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore } from '../stores/auth';
 
 class SocketService {
   private client: Client;
@@ -7,12 +7,12 @@ class SocketService {
   
   constructor() {
     this.client = new Client({
-      brokerURL: import.meta.env.VITE_WS_URL || 'ws://localhost:8080/ws-chat',
+      brokerURL: process.env.VITE_WS_URL || 'ws://localhost:8080/ws',
       connectHeaders: this.getAuthHeaders(),
       reconnectDelay: 5000,
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
-      debug: (str) => console.log(str),
+      debug: (str) => console.log('[WS]', str),
       onConnect: () => {
         this.subscriptions.forEach((callback, topic) => {
           this.subscribe(topic, callback);
@@ -27,7 +27,7 @@ class SocketService {
   private getAuthHeaders() {
     const authStore = useAuthStore();
     return {
-      Authorization: `Bearer ${authStore.token}`
+      Authorization: `Bearer ${authStore.accessToken?.valueOf || ''}`
     };
   }
 
@@ -41,6 +41,7 @@ class SocketService {
     if (this.client.active) {
       this.client.deactivate();
     }
+    this.subscriptions.clear();
   }
 
   subscribe(topic: string, callback: (payload: any) => void) {

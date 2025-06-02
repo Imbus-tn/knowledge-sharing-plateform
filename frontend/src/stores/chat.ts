@@ -1,7 +1,13 @@
 import { defineStore } from 'pinia';
-import { chatApi } from '@/api/chat';
-import { socketService } from '@/services/socket.service';
-import type { Chat, Message, Reaction } from '@/types/chat';
+import { chatApi } from '../api/chat';
+import { socketService } from '../services/socket.service';
+import type { 
+  Chat, 
+  Message, 
+  Reaction,
+  SendMessageRequest,
+  ReactionRequest
+} from '../types/chat';
 
 export const useChatStore = defineStore('chat', {
   state: () => ({
@@ -38,7 +44,7 @@ export const useChatStore = defineStore('chat', {
 
     async deleteChat(chatId: number) {
       await chatApi.deleteChat(chatId);
-      this.chats = this.chats.filter(c => c.id !== chatId);
+      this.chats = this.chats.filter((c: Chat) => c.id !== chatId);
       if (this.currentChat?.id === chatId) {
         this.currentChat = null;
       }
@@ -70,7 +76,7 @@ export const useChatStore = defineStore('chat', {
       if (!this.currentChat) return;
       
       await chatApi.deleteMessage(this.currentChat.id, messageId);
-      this.messages = this.messages.filter(m => m.id !== messageId);
+      this.messages = this.messages.filter((m: Message) => m.id !== messageId);
     },
 
     // Reaction Operations
@@ -88,10 +94,20 @@ export const useChatStore = defineStore('chat', {
     // WebSocket Handlers
     setupSocketListeners() {
       // New message handler
-      socketService.subscribe('/topic/new-message', (message: Message) => {
-        const chat = this.chats.find(c => c.id === message.chatId);
+      socketService.subscribe('/topic/new-message', (incomingMessage: any) => {
+        const message: Message = {
+          ...incomingMessage,
+          chatId: incomingMessage.chatId || this.currentChat?.id || 0
+        };
+
+        const chat = this.chats.find((c: Chat) => c.id === message.chatId);
         if (chat) {
-          chat.lastMessage = message;
+          chat.lastMessage = {
+            id: message.id,
+            text: message.text,
+            sender: message.sender,
+            createdAt: message.createdAt
+          };
           chat.lastActivity = message.createdAt;
           
           if (message.chatId === this.currentChat?.id) {
@@ -106,14 +122,17 @@ export const useChatStore = defineStore('chat', {
       });
 
       // Reaction handler
-      socketService.subscribe('/topic/reaction', (reaction: Reaction) => {
-        const message = this.messages.find(m => m.id === reaction.messageId);
+      socketService.subscribe('/topic/reaction', (incomingReaction: any) => {
+        const reaction: Reaction = {
+          ...incomingReaction,
+          messageId: incomingReaction.messageId || 0
+        };
+
+        const message = this.messages.find((m: Message) => m.id === reaction.messageId);
         if (message) {
-          // Remove existing reaction from this user
           message.reactions = message.reactions.filter(
-            r => !(r.user.id === reaction.user.id && r.emoji === reaction.emoji)
+            (r: Reaction) => !(r.user.id === reaction.user.id && r.emoji === reaction.emoji)
           );
-          // Add new reaction
           message.reactions.push(reaction);
         }
       });
@@ -126,9 +145,8 @@ export const useChatStore = defineStore('chat', {
           this.onlineUsers.delete(update.userId);
         }
         
-        // Update participant status in all chats
-        this.chats.forEach(chat => {
-          chat.participants.forEach(p => {
+        this.chats.forEach((chat: Chat) => {
+          chat.participants.forEach((p) => {
             if (p.id === update.userId) {
               p.online = update.online;
               if (!update.online) {
@@ -142,7 +160,7 @@ export const useChatStore = defineStore('chat', {
 
     // Helper Methods
     calculateUnreadCount() {
-      this.unreadCount = this.chats.reduce((sum, chat) => sum + chat.unreadCount, 0);
+      this.unreadCount = this.chats.reduce((sum: number, chat: Chat) => sum + chat.unreadCount, 0);
     },
 
     isUserOnline(userId: number): boolean {
@@ -152,7 +170,7 @@ export const useChatStore = defineStore('chat', {
 
   getters: {
     getChatById: (state) => (id: number) => {
-      return state.chats.find(chat => chat.id === id);
+      return state.chats.find((chat: Chat) => chat.id === id);
     },
     
     getParticipantStatus: (state) => (userId: number) => {
@@ -163,14 +181,12 @@ export const useChatStore = defineStore('chat', {
       const chat = state.currentChat;
       if (!chat) return 'offline';
       
-      const participant = chat.participants.find(p => p.id === userId);
+      const participant = chat.participants.find((p) => p.id === userId);
       return participant?.lastSeen ? `last seen ${formatLastSeen(participant.lastSeen)}` : 'offline';
     }
   }
 });
 
-// Helper function
 function formatLastSeen(timestamp: string): string {
-  // Implement your time formatting logic
-  return new Date(timestamp).toLocaleString();
+  return new Date(timestamp).toLocaleTimeString();
 }
