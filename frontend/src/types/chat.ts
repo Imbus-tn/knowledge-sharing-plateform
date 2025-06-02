@@ -1,4 +1,4 @@
-// User type (should match your backend User entity)
+
 export interface User {
   id: number;
   username: string;
@@ -8,9 +8,10 @@ export interface User {
   avatarUrl?: string;
   online: boolean;
   lastSeen?: string;
+  initials?: string;  // For avatar fallback
+  status?: 'online' | 'offline' | 'away' | 'busy';
 }
 
-// Chat types
 export interface Chat {
   id: number;
   name: string;
@@ -18,9 +19,11 @@ export interface Chat {
   participants: User[];
   lastActivity: string;
   unreadCount: number;
-  lastMessage?: Message;
+  lastMessage?: MessagePreview;
+  messages: Message[];  // Add messages array
+  createdAt: string;
+  updatedAt: string;
 }
-
 export interface Message {
   id: number;
   text: string;
@@ -29,9 +32,10 @@ export interface Message {
   isRead: boolean;
   isSent: boolean;
   isForwarded: boolean;
-  replyTo?: Message;
+  chatId: number; // Add this property
+  replyTo?: MessagePreview;
   reactions: Reaction[];
-  attachmentUrl?: string;
+  attachment?: Attachment;
 }
 
 export interface Reaction {
@@ -39,6 +43,7 @@ export interface Reaction {
   emoji: string;
   user: User;
   createdAt: string;
+  messageId: number;
 }
 
 // DTOs for API requests
@@ -63,4 +68,81 @@ export interface FileUploadResponse {
   fileName: string;
   fileType: string;
   size: number;
+}
+// For socket service and store types
+export interface UserPresence {
+  userId: number;
+  isOnline: boolean;
+  lastSeen?: string;
+}
+
+export interface MessagePreview {
+  id: number;
+  text: string;
+  sender: User;
+  createdAt: string;
+}
+
+export interface Attachment {
+  type: 'IMAGE' | 'DOCUMENT' | 'AUDIO' | 'VIDEO';
+  url: string;
+  name: string;
+  size: number;
+}
+
+// For the discussion store
+export interface DiscussionState {
+  chats: Chat[];
+  activeChat: number | null;
+  unreadCount: number;
+  showDiscussionPanel: boolean;
+  onlineUsers: Set<number>;
+}
+
+// For API responses
+export interface ApiResponse<T> {
+  data: T;
+  message?: string;
+  success: boolean;
+}
+
+// For paginated responses
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+// For file uploads
+export interface FileUploadProgress {
+  progress: number;
+  loaded: number;
+  total: number;
+}
+// Type guard for User
+export function isUser(user: any): user is User {
+  return user && typeof user.id === 'number' && typeof user.username === 'string';
+}
+
+// Type guard for Chat
+export function isChat(chat: any): chat is Chat {
+  return chat && typeof chat.id === 'number' && Array.isArray(chat.participants);
+}
+
+// Type guard for Message
+export function isMessage(message: any): message is Message {
+  return message && typeof message.id === 'number' && typeof message.text === 'string';
+}
+export enum ChatEventTypes {
+  MESSAGE = 'MESSAGE',
+  TYPING = 'TYPING',
+  READ_RECEIPT = 'READ_RECEIPT',
+  PRESENCE = 'PRESENCE'
+}
+
+export enum MessageStatus {
+  SENT = 'SENT',
+  DELIVERED = 'DELIVERED',
+  READ = 'READ'
 }
