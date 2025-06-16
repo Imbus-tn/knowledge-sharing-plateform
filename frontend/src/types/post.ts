@@ -1,5 +1,5 @@
 import type { User } from './user';
-
+import type { UserRole } from './UserRole';
 // Main Post Interface
 export interface Post {
   id: string;
@@ -8,13 +8,26 @@ export interface Post {
   author: User;
   createdAt: string; 
   updatedAt?: string; 
+  title?: string; // Added for favorites compatibility
+  description?: string; // Added for favorites compatibility
+  likes?: number; // Added for favorites compatibility
+  isFavorite?: boolean;
   
   // Relationships
   reactions: Reaction[]; 
   favorites: Favorite[]; 
-  isFavorite?: boolean;
   comments: Comment[]; 
   shares: Share[]; 
+}
+
+// Simplified Author interface for API responses
+export interface PostAuthor {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  avatarUrl?: string;
+  initials?: string; // Added for UI display
 }
 
 // Reaction Interface
@@ -25,6 +38,8 @@ export interface Reaction {
   comment?: Comment; 
   user: User; 
   createdAt: string; 
+  count?: number; // Added for aggregated reactions
+  users?: string[]; // Added for tracking who reacted
 }
 
 // Comment Interface
@@ -64,6 +79,14 @@ export interface ReportedPost {
   reportedAt: string; 
 }
 
+// API Response Types
+export interface PostsResponse {
+  content: Post[];
+  total: number;
+  page: number;
+  size: number;
+}
+
 // Request Interfaces
 export interface ReactionRequest {
   type: string; 
@@ -80,4 +103,6 @@ export interface ReportRequest {
 export interface CreatePostRequest {
   content: string;
   imageUrl?: string;
+  title?: string;
+  description?: string;
 }

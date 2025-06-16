@@ -1,11 +1,11 @@
 <script setup lang="ts"> 
 import { ref, onMounted, watch, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useChatStore } from '@/stores/chat';
-import { useAuthStore } from '@/stores/auth';
-import { formatDate, formatTime } from '@/utils/date';
-import { socketService } from '@/services/socket.service';
-import type { Message } from '@/types/chat';
+import { useChatStore } from '../stores/chat';
+import { useAuthStore } from '../stores/auth';
+import { formatDate, formatTime } from '../utils/date';
+import { socketService } from '../services/socket.service';
+import type { Message } from '../types/chat';
 import { Check, Users, Reply, Smile, X, Plus, Send, MessageSquare } from 'lucide-vue-next';
 
 const chatStore = useChatStore();
