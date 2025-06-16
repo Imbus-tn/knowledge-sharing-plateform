@@ -1,9 +1,12 @@
-<script setup lang="ts">
+<script setup lang="ts"> 
 import { ref, onMounted, watch, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useChatStore } from 'src/stores/chat';
-import { useAuthStore } from 'src/stores/auth';
-import { formatDate, formatTime } from 'src/utils/date';
+import { useChatStore } from '@/stores/chat';
+import { useAuthStore } from '@/stores/auth';
+import { formatDate, formatTime } from '@/utils/date';
+import { socketService } from '@/services/socket.service';
+import type { Message } from '@/types/chat';
+import { Check, Users, Reply, Smile, X, Plus, Send, MessageSquare } from 'lucide-vue-next';
 
 const chatStore = useChatStore();
 const authStore = useAuthStore();
@@ -13,14 +16,12 @@ const router = useRouter();
 // State
 const newMessage = ref('');
 const replyingTo = ref<Message | null>(null);
-const showEmojiPicker = ref(false);
 const showAttachmentMenu = ref(false);
 const fileInput = ref<HTMLInputElement | null>(null);
 
 // Computed
 const currentUser = computed(() => authStore.user);
 const isCurrentChatGroup = computed(() => chatStore.currentChat?.isGroup || false);
-
 // Watch for route changes
 watch(() => route.params.id, (newId) => {
   if (newId) {
@@ -39,7 +40,7 @@ onMounted(async () => {
 const sendMessage = async () => {
   if (!newMessage.value.trim()) return;
 
-  await chatStore.sendMessage(newMessage.value, replyingTo.value);
+  await chatStore.sendMessage(newMessage.value, replyingTo.value || undefined);
   newMessage.value = '';
   replyingTo.value = null;
 };
@@ -48,12 +49,8 @@ const handleFileUpload = async (e: Event) => {
   const target = e.target as HTMLInputElement;
   if (target.files?.length) {
     await chatStore.sendFile(target.files[0]);
-    target.value = ''; // Reset input
+    target.value = '';
   }
-};
-
-const triggerFileInput = () => {
-  fileInput.value?.click();
 };
 
 const formatMessageDate = (timestamp: string) => {
@@ -62,6 +59,10 @@ const formatMessageDate = (timestamp: string) => {
 
 const formatMessageTime = (timestamp: string) => {
   return formatTime(timestamp);
+};
+
+const formatLastSeen = (timestamp?: string): string => {
+  return timestamp ? new Date(timestamp).toLocaleTimeString() : '';
 };
 
 const showDateSeparator = (message: Message, index: number) => {
@@ -108,29 +109,33 @@ const showDateSeparator = (message: Message, index: number) => {
                 </div>
                 
                 <!-- Chat info -->
-                <div class="flex-1 min-w-0">
-                  <div class="flex justify-between items-start">
-                    <p class="text-white font-medium truncate">
-                      {{ chat.isGroup ? chat.name : `${chat.participants[0].firstName} ${chat.participants[0].lastName}` }}
-                    </p>
-                    <span class="text-xs text-slate-400 flex-shrink-0">{{ formatTime(chat.lastActivity) }}</span>
-                  </div>
-                  <div class="flex items-center space-x-1 text-sm text-slate-400">
-                    <span v-if="chat.lastMessage?.sender.id === currentUser?.id" class="text-emerald-500">You:</span>
-                    <p class="truncate">{{ chat.lastMessage?.text || 'No messages yet' }}</p>
-                  </div>
-                  <div class="flex items-center justify-between mt-1">
-                    <div class="flex items-center space-x-2">
-                      <span v-if="chat.lastMessage?.sender.id === currentUser?.id" class="text-blue-400">
-                        <Check class="w-4 h-4" :class="chat.lastMessage?.isRead ? 'text-blue-400' : 'text-slate-400'" />
-                      </span>
-                    </div>
-                    <div v-if="chat.unreadCount > 0" 
-                      class="px-2 py-0.5 rounded-full bg-emerald-500 text-xs text-white font-medium"
-                    >
-                      {{ chat.unreadCount }}
-                    </div>
-                  </div>
+               <div class="flex-1 min-w-0">
+                        <div class="flex justify-between items-start">
+                          <p class="text-white font-medium truncate">
+                            {{ chat.isGroup ? chat.name : `${chat.participants[0].firstName} ${chat.participants[0].lastName}` }}
+                          </p>
+                          <span class="text-xs text-slate-400 flex-shrink-0">{{ formatTime(chat.lastActivity) }}</span>
+                        </div>
+                        <div class="flex items-center space-x-1 text-sm text-slate-400">
+                          <span v-if="chat.lastMessage?.sender.id === currentUser?.id" class="text-emerald-500">You:</span>
+                          <p class="truncate">{{ chat.lastMessage?.text || 'No messages yet' }}</p>
+                        </div>
+                        <div class="flex items-center justify-between mt-1">
+                          <div class="flex items-center space-x-2">
+                            <span v-if="chat.lastMessage?.sender.id === currentUser?.id" class="text-blue-400">
+                              <!-- Add null check for isRead -->
+                              <Check 
+                                class="w-4 h-4" 
+                                :class="chat.lastMessage?.isRead !== undefined && chat.lastMessage.isRead ? 'text-blue-400' : 'text-slate-400'" 
+                              />
+                            </span>
+                          </div>
+                          <div v-if="chat.unreadCount > 0" 
+                            class="px-2 py-0.5 rounded-full bg-emerald-500 text-xs text-white font-medium"
+                          >
+                            {{ chat.unreadCount }}
+                          </div>
+                        </div>
                 </div>
               </div>
             </div>

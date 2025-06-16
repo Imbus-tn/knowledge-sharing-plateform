@@ -20,7 +20,7 @@ export interface Chat {
   lastActivity: string;
   unreadCount: number;
   lastMessage?: MessagePreview;
-  messages: Message[];  // Add messages array
+  messages: Message[];
   createdAt: string;
   updatedAt: string;
 }
@@ -30,14 +30,13 @@ export interface Message {
   sender: User;
   createdAt: string;
   isRead: boolean;
-  isSent: boolean;
-  isForwarded: boolean;
-  chatId: number; // Add this property
+  isSent?: boolean;
+  isForwarded?: boolean;
+  chatId: number;
   replyTo?: MessagePreview;
   reactions: Reaction[];
   attachment?: Attachment;
 }
-
 export interface Reaction {
   id: number;
   emoji: string;
@@ -81,6 +80,7 @@ export interface MessagePreview {
   text: string;
   sender: User;
   createdAt: string;
+  isRead: boolean; 
 }
 
 export interface Attachment {

@@ -6,7 +6,8 @@ import type {
   Message, 
   Reaction,
   SendMessageRequest,
-  ReactionRequest
+  ReactionRequest,
+  MessagePreview
 } from '../types/chat';
 
 export const useChatStore = defineStore('chat', {
@@ -19,7 +20,6 @@ export const useChatStore = defineStore('chat', {
   }),
 
   actions: {
-    // CRUD Operations
     async fetchChats() {
       this.chats = await chatApi.getAllChats();
       this.calculateUnreadCount();
@@ -50,7 +50,6 @@ export const useChatStore = defineStore('chat', {
       }
     },
 
-    // Message Operations
     async sendMessage(text: string, replyTo?: Message) {
       if (!this.currentChat) return;
 
@@ -79,7 +78,6 @@ export const useChatStore = defineStore('chat', {
       this.messages = this.messages.filter((m: Message) => m.id !== messageId);
     },
 
-    // Reaction Operations
     async toggleReaction(message: Message, emoji: string) {
       if (!this.currentChat) return;
 
@@ -91,23 +89,28 @@ export const useChatStore = defineStore('chat', {
       await chatApi.toggleReaction(this.currentChat.id, request);
     },
 
-    // WebSocket Handlers
     setupSocketListeners() {
-      // New message handler
       socketService.subscribe('/topic/new-message', (incomingMessage: any) => {
         const message: Message = {
           ...incomingMessage,
-          chatId: incomingMessage.chatId || this.currentChat?.id || 0
+          chatId: incomingMessage.chatId || this.currentChat?.id || 0,
+          isRead: incomingMessage.isRead || false,
+          reactions: incomingMessage.reactions || [],
+          isSent: incomingMessage.isSent || true,
+          isForwarded: incomingMessage.isForwarded || false
         };
 
         const chat = this.chats.find((c: Chat) => c.id === message.chatId);
         if (chat) {
-          chat.lastMessage = {
+          const lastMessage: MessagePreview = {
             id: message.id,
             text: message.text,
             sender: message.sender,
-            createdAt: message.createdAt
+            createdAt: message.createdAt,
+            isRead: message.isRead
           };
+          
+          chat.lastMessage = lastMessage;
           chat.lastActivity = message.createdAt;
           
           if (message.chatId === this.currentChat?.id) {
@@ -121,15 +124,19 @@ export const useChatStore = defineStore('chat', {
         }
       });
 
-      // Reaction handler
       socketService.subscribe('/topic/reaction', (incomingReaction: any) => {
         const reaction: Reaction = {
           ...incomingReaction,
-          messageId: incomingReaction.messageId || 0
+          messageId: incomingReaction.messageId || 0,
+          createdAt: incomingReaction.createdAt || new Date().toISOString()
         };
 
         const message = this.messages.find((m: Message) => m.id === reaction.messageId);
         if (message) {
+          if (!message.reactions) {
+            message.reactions = [];
+          }
+          
           message.reactions = message.reactions.filter(
             (r: Reaction) => !(r.user.id === reaction.user.id && r.emoji === reaction.emoji)
           );
@@ -137,7 +144,6 @@ export const useChatStore = defineStore('chat', {
         }
       });
 
-      // User presence handler
       socketService.subscribe('/topic/presence', (update: { userId: number, online: boolean }) => {
         if (update.online) {
           this.onlineUsers.add(update.userId);
@@ -158,7 +164,6 @@ export const useChatStore = defineStore('chat', {
       });
     },
 
-    // Helper Methods
     calculateUnreadCount() {
       this.unreadCount = this.chats.reduce((sum: number, chat: Chat) => sum + chat.unreadCount, 0);
     },
