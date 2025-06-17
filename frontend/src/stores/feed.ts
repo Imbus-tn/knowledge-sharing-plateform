@@ -66,11 +66,11 @@ export const useFeedStore = defineStore('feed', () => {
         postData = [];
       }
 
-      postData.sort((a, b) => {
-        const dateA = new Date(a.createdAt).getTime();
-        const dateB = new Date(b.createdAt).getTime();
-        return dateB - dateA;
-      });
+     postData.sort((a: Post, b: Post) => {
+  const dateA = new Date(a.createdAt).getTime();
+  const dateB = new Date(b.createdAt).getTime();
+  return dateB - dateA;
+   });
 
       posts.value = postData;
     } catch (err: any) {

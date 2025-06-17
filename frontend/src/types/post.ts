@@ -1,5 +1,6 @@
 import type { User } from './user';
 import type { UserRole } from './UserRole';
+
 // Main Post Interface
 export interface Post {
   id: string;
@@ -30,17 +31,7 @@ export interface PostAuthor {
   initials?: string; // Added for UI display
 }
 
-// Reaction Interface
-export interface Reaction {
-  id?: string;
-  type: string; 
-  post?: Post; 
-  comment?: Comment; 
-  user: User; 
-  createdAt: string; 
-  count?: number; // Added for aggregated reactions
-  users?: string[]; // Added for tracking who reacted
-}
+
 
 // Comment Interface
 export interface Comment {
