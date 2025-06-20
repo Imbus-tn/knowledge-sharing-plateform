@@ -12,4 +12,9 @@ export interface User {
     linkedin?: string;
     avatarUrl?: string; 
     lastLogin?: string;
+    articlesCount?: number | string;
+    totalViews?: number | string;
+    contributions?: number | string;
+    initials?: string;
+
   }

@@ -15,35 +15,57 @@
     </button>
   </template>
   
-  <script setup lang="ts">
-  import { computed } from 'vue'
-  import { useThemeStore } from '../stores/theme';
-  import { useFavoritesStore } from '../stores/favorites';
-  
-  const props = defineProps<{
-    item: {
-        id: string
-        title?: string
-        description?: string
-        coverImage?: string
-        type?: string
-        category?: string
-        createdAt?: string
-        authorId: string
-    }
-  }>()
-  
-  const themeStore = useThemeStore()
-  const favoritesStore = useFavoritesStore()
-  
-  const isDark = computed(() => themeStore.isDark)
-  const isFavorite = computed(() => favoritesStore.isFavorite(props.item.id))
-  
-  function toggleFavorite() {
-    if (isFavorite.value) {
-      favoritesStore.removeFavorite(props.item.id)
-    } else {
-      favoritesStore.addFavorite(props.item)
-    }
+<script setup lang="ts">
+import { computed } from 'vue'
+import { useThemeStore } from '../stores/theme'
+import { useFavoritesStore } from '../stores/favorites'
+
+const props = defineProps<{
+  item: {
+    id: string
+    title?: string
+    description?: string
+    coverImage?: string
+    type?: string
+    category?: string
+    createdAt?: string
+    authorId?: string
+    likes?: number
+    comments?: number
+    shares?: number
+    isFavorite?: boolean
   }
-  </script>
+}>()
+
+const themeStore = useThemeStore()
+const favoritesStore = useFavoritesStore()
+
+const isDark = computed(() => themeStore.isDark)
+
+const isFavorite = computed(() => {
+  return favoritesStore.items.some(fav => fav.id === props.item.id)
+})
+
+const toggleFavorite = async () => {
+  const favorited = isFavorite.value
+  const itemToToggle = {
+  id: props.item.id,
+  title: props.item.title || '',
+  description: props.item.description || '',
+  coverImage: props.item.coverImage || undefined,
+  type: props.item.type || undefined,
+  category: props.item.category || undefined,
+  createdAt: props.item.createdAt || new Date().toISOString(),
+  authorId: props.item.authorId || 'unknown',
+  likes: props.item.likes ?? 0,
+  comments: props.item.comments ?? 0,
+  shares: props.item.shares ?? 0
+}
+
+  if (!favorited) {
+    await favoritesStore.toggleFavorite(itemToToggle)
+  } else {
+    await favoritesStore.removeFavorite(props.item.id)
+  }
+}
+</script>

@@ -10,12 +10,36 @@ export const useFavoritesStore = defineStore('favorites', {
   }),
 
   actions: {
+    generateMockFavorites() {
+    this.items = [
+      {
+        id: 'mock1',
+        title: 'Vue 3 Fundamentals',
+        description: 'A beginner-friendly guide to Vue 3.',
+        coverImage: '/images/vue.jpg',
+        authorId: 'user1',
+        likes: 42,
+        comments: 5,
+        shares: 8
+      },
+      {
+        id: 'mock2',
+        title: 'TypeScript Tips',
+        description: 'How to avoid common mistakes when writing TypeScript.',
+        coverImage: '/images/ts.jpg',
+        authorId: 'user2',
+        likes: 67,
+        comments: 9,
+        shares: 12
+      }
+    ]
+  },
     async loadFavoritesFromAPI() {
       this.loading = true
       this.error = null
       try {
         const res = await axios.get('/api/content/posts/favorites')
-        this.items = res.data.content
+        this.items = res.data.content || []
       } catch (err) {
         this.error = 'Failed to load favorites'
         console.error(err)
@@ -24,11 +48,10 @@ export const useFavoritesStore = defineStore('favorites', {
       }
     },
 
-    async toggleFavorite(post: FavoriteItem) {
+    async toggleFavorite(post: Partial<FavoriteItem>) {
       try {
         await axios.post(`/api/content/posts/${post.id}/favorite`, {})
         await this.loadFavoritesFromAPI()
-        return true
       } catch (err) {
         console.error('Failed to toggle favorite:', err)
         return false

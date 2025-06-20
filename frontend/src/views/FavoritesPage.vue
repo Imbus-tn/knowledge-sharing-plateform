@@ -233,7 +233,7 @@
                   <!-- Author Info -->
                   <div class="flex-shrink-0">
                     <div class="w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center">
-                      <span class="text-white font-medium">{{ getAuthorInitials(item.authorId) }}</span>
+                      <span class="text-white font-medium">{{ getAuthorInitials(item.authorId ?? 'unknown') }}</span>
                     </div>
                   </div>
                   <div class="flex-1 min-w-0">
@@ -241,13 +241,13 @@
                       'font-medium transition-colors',
                       isDark ? 'text-white' : 'text-slate-900'
                     ]">
-                      {{ getAuthorName(item.authorId) }}
+                      {{ getAuthorName(item.authorId ?? 'unknown') }}
                     </p>
                     <p :class="[
                       'text-xs transition-colors',
                       isDark ? 'text-slate-500' : 'text-slate-400'
                     ]">
-                      {{ formatDate(item.createdAt) }}
+                      <p>{{ formatDate(item.createdAt ?? new Date().toISOString()) }}</p>
                     </p>
                   </div>
                   <!-- Favorite Button -->
@@ -278,16 +278,17 @@
                         ❤️
                       </div>
                     </div>
-                    <span class="text-slate-400 text-sm ml-2">{{ formatNumber(item.likes) }}</span>
+                    <span class="text-slate-400 text-sm ml-2">{{ formatNumber(item.likes ?? 0) }}</span>
                   </div>
                   <div class="flex items-center space-x-4 text-sm text-slate-400">
                     <div class="flex items-center">
                       <MessageSquare class="w-4 h-4 mr-1" />
-                      <span>{{ formatNumber(item.comments) }}</span>
+                      <span>{{ formatNumber(item.comments ?? 0) }}
+                     </span>
                     </div>
                     <div class="flex items-center">
                       <Share2 class="w-4 h-4 mr-1" />
-                      <span>{{ formatNumber(item.shares) }}</span>
+                      <span>{{ formatNumber(item.shares ?? 0) }}</span>
                     </div>
                   </div>
                 </div>
@@ -344,7 +345,9 @@
   import { User, LayoutDashboard, Bookmark, MessageSquare, Share2, ThumbsUp, Star } from 'lucide-vue-next';
   import SearchBar from '../components/SearchBar.vue';
   import FavoriteButton from '../components/FavoriteButton.vue';
-  
+  import { useFavoritesStore } from '../stores/favorites';
+  import type{Reaction} from '../types/reaction';
+  import type { Comment, Favorite, Share } from '../types/post';
   const authStore = useAuthStore();
   const themeStore = useThemeStore();
   const favoritesStore = useFavoritesStore();
@@ -411,13 +414,21 @@
     return new Intl.NumberFormat('en-US', { notation: 'compact' }).format(num);
   };
   
-  const getAuthorInitials = (authorId: string) => {
-    return 'JD';
-  };
+  const getAuthorInitials = (authorId: string): string => {
+  if (authorId === 'unknown') return '?'
+
+  const author = authors.value.find(a => a.id === authorId)
+  if (!author) return '?'
+
+  return (author.firstName[0] + author.lastName[0]).toUpperCase()
+}
   
-  const getAuthorName = (authorId: string) => {
-    return 'John Doe';
-  };
+  const getAuthorName = (authorId: string): string => {
+  if (authorId === 'unknown') return 'Anonymous'
+
+  const author = authors.value.find(a => a.id === authorId)
+  return author?.name || 'Unknown Author'
+};
   
   onMounted(() => {
     if (favorites.value.length === 0) {

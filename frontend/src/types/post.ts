@@ -1,6 +1,6 @@
 import type { User } from './user';
 import type { UserRole } from './UserRole';
-
+import type { Reaction } from './reaction';
 // Main Post Interface
 export interface Post {
   id: string;

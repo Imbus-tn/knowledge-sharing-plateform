@@ -3,7 +3,7 @@ import axios from 'axios';
 
 export interface Notification {
   id: string;
-  type: 'post' | 'reaction' | 'comment' | 'favorite' | 'system';
+  type: 'post' | 'comment' | 'reaction' | 'favorite' | 'system' | 'error'; 
   message: string;
   read: boolean;
   createdAt: string;
@@ -15,7 +15,7 @@ export interface Notification {
   };
   postId?: string;
   postTitle?: string;
-  userId?: string; // To identify if the post belongs to current user
+  userId?: string;
 }
 
 interface NotificationState {

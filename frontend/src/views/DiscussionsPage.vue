@@ -7,6 +7,7 @@ import { formatDate, formatTime } from '../utils/date';
 import { socketService } from '../services/socket.service';
 import type { Message } from '../types/chat';
 import { Check, Users, Reply, Smile, X, Plus, Send, MessageSquare } from 'lucide-vue-next';
+import type { Reaction } from '../types/reaction';
 
 const chatStore = useChatStore();
 const authStore = useAuthStore();

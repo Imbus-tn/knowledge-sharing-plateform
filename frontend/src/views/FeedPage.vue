@@ -614,7 +614,8 @@
   import CreatePostModal from '../components/CreatePostModal.vue';
   import { useNotificationStore } from '../stores/notification';
   import { useFeedStore } from '../stores/feed';
-  
+  import type { Post } from '../types/post'
+  import type { Reaction }from '../types/reaction'; 
   const authStore = useAuthStore();
   const feedStore = useFeedStore();
   const themeStore = useThemeStore();
@@ -719,33 +720,35 @@
     showReactionPickerFor.value = post.id;
   };
 
-  const hasReacted = (post: Post, emoji: string) => {
-    const reaction = post.reactions.find((r: any) => r.emoji === emoji);
-    return reaction?.users.includes('user1');
-  };
+const hasReacted = (post: Post, emoji: string) => {
+  const reaction = post.reactions.find((r: Reaction) => r.emoji === emoji)
+  return reaction?.users?.includes('user1')
+}
 
-  const addReaction = (post: Post, emoji: string) => {
-    let reaction = post.reactions.find((r: any) => r.emoji === emoji);
-    if (reaction) {
-      if (reaction.users.includes('user1')) {
-        reaction.count--;
-        reaction.users = reaction.users.filter((u: string) => u !== 'user1');
-        if (reaction.count === 0) {
-          post.reactions = post.reactions.filter((r: any) => r.emoji !== emoji);
-        }
-      } else {
-        reaction.count++;
-        reaction.users.push('user1');
+const addReaction = (post: Post, emoji: string) => {
+  let reaction = post.reactions.find((r: Reaction) => r.emoji === emoji)
+
+  if (reaction) {
+    if (reaction.users?.includes('user1')) {
+      reaction.count = (reaction.count ?? 1) - 1
+      reaction.users = reaction.users.filter((u: string) => u !== 'user1')
+      if ((reaction.count ?? 0) <= 0) {
+        post.reactions = post.reactions.filter((r: Reaction) => r.emoji !== emoji)
       }
     } else {
-      post.reactions.push({
-        emoji,
-        count: 1,
-        users: ['user1']
-      });
+      reaction.count = (reaction.count ?? 0) + 1
+      reaction.users = [...(reaction.users ?? []), 'user1']
     }
-    showReactionPickerFor.value = null;
-  };
+  } else {
+    post.reactions.push({
+      emoji,
+      count: 1,
+      users: ['user1']
+    })
+  }
+
+  showReactionPickerFor.value = null
+}
   
   // Time formatting
   const formatTime = (timestamp: string) => {
@@ -816,37 +819,43 @@
     // Notify the post's author if someone favorited their post
     if (post.author.id !== authStore.user?.id && post.isFavorite) {
       notificationStore.addNotification({
-        type: 'favorite',
-        message: `${authStore.user?.name} favorited your post "${post.title}"`,
-        link: `/post/${post.id}`,
-        userId: post.author.id,
-        postId: post.id,
-        user: {
-          name: authStore.user?.name || 'User',
-          initials: authStore.user?.initials || 'U'
+    type: 'favorite',
+    message: `${authStore.user?.name} favorited your post "${post.title}"`,
+    link: `/post/${post.id}`,
+    userId: String(post.author.id), // Convert to string
+    postId: post.id,
+    user: {
+      name: authStore.user?.name || 'User',
+      initials: authStore.user?.initials || 'U'
         }
       });
     }
   };
   
   // Create post handler
-  const handleCreatePost = async (postData: Post) => {
-    try {
-      await feedStore.createPost({
-        content: postData.content,
-        imageUrl: postData.imageUrl
-      });
-    } catch (error) {
-      console.error("Failed to create post:", error);
-      notificationStore.addNotification({
-        type: 'error',
-        message: 'Failed to create post.',
-        link: '/feed'
-      });
-    } finally {
-      showCreateModal.value = false;
-    }
-  };
+  const handleCreatePost = async (data: {
+  mode: "new-post" | "share-link";
+  content: string;
+  imageUrl: string;
+  linkUrl: string;
+  additionalNotes: string;
+}) => {
+  try {
+    await feedStore.createPost({
+      content: data.content,
+      imageUrl: data.imageUrl
+    })
+  } catch (error) {
+    console.error("Failed to create post:", error)
+    notificationStore.addNotification({
+      type: 'system',
+      message: 'Failed to create post.',
+      link: '/feed'
+    })
+  } finally {
+    showCreateModal.value = false
+  }
+};
   
   // Handle click outside to close dropdowns
   const handleClickOutside = (event: MouseEvent): void => {
