@@ -611,11 +611,15 @@
     Code, Server, Cloud, Database, Terminal, Lock, Star,
     Edit, Flag, Trash2
   } from 'lucide-vue-next';
+  import { User as UserIcon } from 'lucide-vue-next';
+
   import CreatePostModal from '../components/CreatePostModal.vue';
   import { useNotificationStore } from '../stores/notification';
   import { useFeedStore } from '../stores/feed';
-  import type { Post } from '../types/post'
-  import type { Reaction }from '../types/reaction'; 
+  import type { Post } from '../types/post';
+  import type { Reaction } from '@/types/reaction';
+  import  { UserRole } from '@/types/UserRole';
+  
   const authStore = useAuthStore();
   const feedStore = useFeedStore();
   const themeStore = useThemeStore();
@@ -641,19 +645,14 @@
       : '';
   });
 
-  const getAuthorAvatar = (author: any) => {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-    const rawUrl = author?.avatarUrl;
+ const getAuthorAvatar = (author: any) => {
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+  const rawUrl = author?.avatarUrl;
 
-    if (!rawUrl) return '';
-
-    // Avoid duplicating the base URL if already absolute
-    if (rawUrl.startsWith('http')) {
-      return rawUrl;
-    }
-
-    return `${apiUrl}${rawUrl}`;
-  };
+  if (!rawUrl) return '';
+  if (rawUrl.startsWith('http')) return rawUrl;
+  return `${apiUrl}${rawUrl}`;
+};
   
   // Quick stats
   const quickStats = computed(() => ({
@@ -679,16 +678,17 @@
   
   
 
-  const getTopReactions = (post: Post) => {
-    return post.reactions
-      .sort((a: any, b: any) => b.count - a.count)
-      .slice(0, 3);
-  };
+const getTopReactions = (post: Post) => {
+  return post.reactions
+    .sort((a: Reaction, b: Reaction) => (b.count ?? 0) - (a.count ?? 0))
+    .slice(0, 3);
+};
 
-  const getTotalReactions = (post: Post) => {
-    return post.reactions.reduce((total: number, reaction: any) => total + reaction.count, 0);
-  };
+const getTotalReactions = (post: Post) => {
+  return post.reactions.reduce((total, r: Reaction) => total + (r.count ?? 0), 0)
+};
 
+ 
 
   const handleReactionMouseLeave = () => {
     reactionHideTimer = window.setTimeout(() => {
@@ -720,35 +720,58 @@
     showReactionPickerFor.value = post.id;
   };
 
-const hasReacted = (post: Post, emoji: string) => {
+const hasReacted = (post: Post, emoji: string): boolean => {
+  const currentUserId = String(authStore.user?.id)
+
+  if (!authStore.user) return false
+
   const reaction = post.reactions.find((r: Reaction) => r.emoji === emoji)
-  return reaction?.users?.includes('user1')
-}
+  return reaction?.users?.includes(currentUserId) ?? false
+};
 
 const addReaction = (post: Post, emoji: string) => {
+  const currentUser = authStore.user
+  const currentUserId = String(currentUser?.id)
+
+  if (!currentUser) {
+    console.warn("User not logged in")
+    return
+  }
+
   let reaction = post.reactions.find((r: Reaction) => r.emoji === emoji)
 
   if (reaction) {
-    if (reaction.users?.includes('user1')) {
+    if (reaction.users?.includes(currentUserId)) {
+      // Remove reaction
       reaction.count = (reaction.count ?? 1) - 1
-      reaction.users = reaction.users.filter((u: string) => u !== 'user1')
+      reaction.users = reaction.users.filter(u => u !== currentUserId)
+
       if ((reaction.count ?? 0) <= 0) {
-        post.reactions = post.reactions.filter((r: Reaction) => r.emoji !== emoji)
+        post.reactions = post.reactions.filter(r => r.emoji !== emoji)
       }
     } else {
+      // Add reaction
       reaction.count = (reaction.count ?? 0) + 1
-      reaction.users = [...(reaction.users ?? []), 'user1']
+      reaction.users = [...(reaction.users ?? []), currentUserId]
     }
   } else {
+    // Create new reaction
     post.reactions.push({
       emoji,
       count: 1,
-      users: ['user1']
+      users: [currentUserId],
+      user: {
+        id: currentUserId,
+        name: currentUser.name ?? 'Anonymous',
+        email: currentUser.email ?? '',
+        role: currentUser.role ?? UserRole.USER
+      },
+      createdAt: new Date().toISOString()
     })
   }
 
   showReactionPickerFor.value = null
-}
+};
   
   // Time formatting
   const formatTime = (timestamp: string) => {
@@ -813,32 +836,31 @@ const addReaction = (post: Post, emoji: string) => {
     });
   };
 
-  const toggleFavorite = (post: Post) => {
-    post.isFavorite = !post.isFavorite;
-    
-    // Notify the post's author if someone favorited their post
-    if (post.author.id !== authStore.user?.id && post.isFavorite) {
-      notificationStore.addNotification({
-    type: 'favorite',
-    message: `${authStore.user?.name} favorited your post "${post.title}"`,
-    link: `/post/${post.id}`,
-    userId: String(post.author.id), // Convert to string
-    postId: post.id,
-    user: {
-      name: authStore.user?.name || 'User',
-      initials: authStore.user?.initials || 'U'
-        }
-      });
-    }
-  };
+const toggleFavorite = (post: Post) => {
+  post.isFavorite = !post.isFavorite
+
+  if (post.author.id !== authStore.user?.id && post.isFavorite) {
+    notificationStore.addNotification({
+      type: 'favorite',
+      message: `${authStore.user?.name} favorited your post "${post.title}"`,
+      link: `/post/${post.id}`,
+      userId: String(post.author.id), //  Convert to string
+      postId: post.id,
+      user: {
+        name: authStore.user?.name || 'User',
+        initials: authStore.user?.initials || 'U'
+      }
+    })
+  }
+};
   
   // Create post handler
-  const handleCreatePost = async (data: {
-  mode: "new-post" | "share-link";
-  content: string;
-  imageUrl: string;
-  linkUrl: string;
-  additionalNotes: string;
+ const handleCreatePost = async (data: {
+  mode: "new-post" | "share-link"
+  content: string
+  imageUrl: string
+  linkUrl: string
+  additionalNotes: string
 }) => {
   try {
     await feedStore.createPost({
@@ -855,7 +877,7 @@ const addReaction = (post: Post, emoji: string) => {
   } finally {
     showCreateModal.value = false
   }
-};
+}
   
   // Handle click outside to close dropdowns
   const handleClickOutside = (event: MouseEvent): void => {

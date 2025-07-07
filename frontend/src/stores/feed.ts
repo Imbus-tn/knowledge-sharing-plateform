@@ -1,33 +1,22 @@
-// stores/feed.ts
-
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { apiClient } from '../api'
 import { useAuthStore } from './auth'
-import type { Reaction } from '../types/reaction'
-import type {
-  Post,
-  Comment,
-  Favorite,
-  Share
-} from '../types/post'
+import type { Post } from '../types/post'
 import { UserRole } from '../types/UserRole'
 
 export const useFeedStore = defineStore('feed', () => {
-  // State
   const authStore = useAuthStore()
   const posts = ref<Post[]>([])
   const loading = ref<boolean>(false)
   const error = ref<string | null>(null)
 
-  // Getters
   const getPostById = computed(() => {
     return (postId: string) => {
       return posts.value.find((post: Post) => post.id === postId)
     }
   })
 
-  // Actions
   const fetchPosts = async (): Promise<void> => {
     try {
       loading.value = true
@@ -71,7 +60,7 @@ export const useFeedStore = defineStore('feed', () => {
         postData = []
       }
 
-      // Sort by date
+      // Sort by date with explicit typing
       postData.sort((a: Post, b: Post) => {
         const dateA = new Date(a.createdAt).getTime()
         const dateB = new Date(b.createdAt).getTime()
@@ -81,7 +70,7 @@ export const useFeedStore = defineStore('feed', () => {
       posts.value = postData
     } catch (err: any) {
       error.value = err.message || 'Failed to load posts'
-      console.error('Error fetching posts:', err)
+      console.error("Error fetching posts:", err)
     } finally {
       loading.value = false
     }
@@ -105,7 +94,6 @@ export const useFeedStore = defineStore('feed', () => {
           avatarUrl: backendPost.author?.avatarUrl ?? authStore.user?.avatarUrl ?? undefined
         },
         createdAt: backendPost.createdAt || new Date().toISOString(),
-        updatedAt: undefined,
         reactions: backendPost.reactions || [],
         favorites: backendPost.favorites || [],
         comments: backendPost.comments || [],
@@ -139,6 +127,7 @@ export const useFeedStore = defineStore('feed', () => {
         comments: response.data.comments || [],
         shares: response.data.shares || []
       }
+
       const index = posts.value.findIndex((p: Post) => p.id === postId)
       if (index !== -1) {
         posts.value[index] = updatedPost
@@ -169,7 +158,7 @@ export const useFeedStore = defineStore('feed', () => {
   const toggleFavorite = async (postId: string): Promise<void> => {
     try {
       await apiClient.post(`/content/posts/${postId}/favorite`, {})
-      const post = posts.value.find((p: Post) => p.id === postId)
+      const post = posts.value.find(p => p.id === postId)
       if (post) {
         post.isFavorite = !post.isFavorite
       }
@@ -184,7 +173,7 @@ export const useFeedStore = defineStore('feed', () => {
     try {
       const response = await apiClient.post(`/content/posts/${postId}/react`, { type: reactionType })
       const newReaction = response.data
-      const post = posts.value.find((p: Post) => p.id === postId)
+      const post = posts.value.find(p => p.id === postId)
       if (post && newReaction) {
         post.reactions.push(newReaction)
       }
@@ -200,7 +189,7 @@ export const useFeedStore = defineStore('feed', () => {
       loading.value = true
       const response = await apiClient.post(`/content/posts/${postId}/comment`, { text })
       const newComment = response.data
-      const post = posts.value.find((p: Post) => p.id === postId)
+      const post = posts.value.find(p => p.id === postId)
       if (post && newComment) {
         post.comments.push(newComment)
       }
@@ -210,46 +199,6 @@ export const useFeedStore = defineStore('feed', () => {
       throw err
     } finally {
       loading.value = false
-    }
-  }
-
-  const reportPost = async (postId: string, reason: string): Promise<void> => {
-    try {
-      await apiClient.post(`/content/posts/${postId}/report`, { reason })
-    } catch (err: any) {
-      error.value = err.message || 'Failed to report post.'
-      console.error('Error reporting post:', err)
-      throw err
-    }
-  }
-
-  const sharePost = async (postId: string): Promise<void> => {
-    try {
-      await apiClient.post(`/content/posts/${postId}/share`, {})
-    } catch (err: any) {
-      error.value = err.message || 'Failed to share post.'
-      console.error('Error sharing post:', err)
-      throw err
-    }
-  }
-
-  const replyToComment = async (commentId: string, text: string): Promise<void> => {
-    try {
-      await apiClient.post(`/content/comments/${commentId}/reply`, { text })
-    } catch (err: any) {
-      error.value = err.message || 'Failed to reply to comment.'
-      console.error('Error replying to comment:', err)
-      throw err
-    }
-  }
-
-  const reactToComment = async (commentId: string, reactionType: string): Promise<void> => {
-    try {
-      await apiClient.post(`/content/comments/${commentId}/react`, { type: reactionType })
-    } catch (err: any) {
-      error.value = err.message || 'Failed to react to comment.'
-      console.error('Error reacting to comment:', err)
-      throw err
     }
   }
 
@@ -264,10 +213,6 @@ export const useFeedStore = defineStore('feed', () => {
     deletePost,
     toggleFavorite,
     reactToPost,
-    addComment,
-    replyToComment,
-    reactToComment,
-    reportPost,
-    sharePost
+    addComment
   }
 })

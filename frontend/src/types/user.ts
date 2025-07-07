@@ -12,9 +12,8 @@ export interface User {
     linkedin?: string;
     avatarUrl?: string; 
     lastLogin?: string;
+    initials?: string; // Add this line
     articlesCount?: number | string;
-    totalViews?: number | string;
-    contributions?: number | string;
-    initials?: string;
-
+totalViews?: number | string;
+contributions?: number | string;
   }

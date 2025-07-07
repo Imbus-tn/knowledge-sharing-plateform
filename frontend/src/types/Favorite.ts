@@ -1,18 +1,17 @@
 // src/types/favorite.ts
 
 export interface FavoriteItem {
-  id: string
-  title?: string
-  description?: string
-  coverImage?: string
-  type?: string
-  category?: string
-  createdAt?: string
-  authorId?: string
-  likes?: number
-  comments?: number
-  shares?: number
-  isFavorite?: boolean
+  id: string;
+  title: string;
+  description: string;
+  coverImage?: string;
+  authorId: string;
+  createdAt: string;
+  likes: number;
+  comments: number;
+  shares: number;
+  isFavorite?: boolean;
+  // Add any other properties you need for favorite items
 }
 
 export interface FavoritesState {
@@ -28,7 +27,6 @@ export interface FavoriteResponse {
   data?: FavoriteItem | FavoriteItem[];
 }
 
-// For the toggle favorite action payload
 export interface ToggleFavoritePayload {
   postId: string;
   isFavorite: boolean;

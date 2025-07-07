@@ -2,8 +2,7 @@ import { defineStore } from 'pinia';
 import axios from 'axios';
 
 export interface Notification {
-  id: string;
-  type: 'post' | 'comment' | 'reaction' | 'favorite' | 'system' | 'error'; 
+  id: string;type: 'system' | 'post' | 'reaction' | 'comment' | 'favorite' | 'error';
   message: string;
   read: boolean;
   createdAt: string;
@@ -15,7 +14,7 @@ export interface Notification {
   };
   postId?: string;
   postTitle?: string;
-  userId?: string;
+  userId?: string; // To identify if the post belongs to current user
 }
 
 interface NotificationState {

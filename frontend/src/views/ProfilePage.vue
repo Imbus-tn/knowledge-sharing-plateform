@@ -382,7 +382,7 @@
 import { computed, onMounted } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { 
-  Shield, Edit3, User, Settings, MapPin, 
+  Shield, Edit3, Settings, MapPin, 
   Github, Linkedin, Phone, ArrowRight, FileText, Code, Users
 } from 'lucide-vue-next';
 import { useThemeStore } from '../stores/theme';
@@ -393,6 +393,9 @@ const isDark = computed(() => themeStore.isDark);
 
 const authStore = useAuthStore();
 const user = computed(() => authStore.user);
+import { User as UserIcon } from 'lucide-vue-next';
+import type { User as UserType } from '../types/user';
+
 
 // Avatar handling
 const avatarUrl = computed(() => {
@@ -446,7 +449,7 @@ const quickStats = computed(() => [
   { label: 'Articles Published', value: user.value?.articlesCount || 24 },
   { label: 'Total Views', value: user.value?.totalViews || '12.4K' },
   { label: 'Contributions', value: user.value?.contributions || 156 },
-  { label: 'Member Since', value: user.value?.memberSince || 'Feb 2024' }
+ 
 ]);
 
 // Contribution stats

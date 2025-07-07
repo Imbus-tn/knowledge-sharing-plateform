@@ -233,7 +233,7 @@
                   <!-- Author Info -->
                   <div class="flex-shrink-0">
                     <div class="w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center">
-                      <span class="text-white font-medium">{{ getAuthorInitials(item.authorId ?? 'unknown') }}</span>
+                      <span class="text-white font-medium">{{ getAuthorInitials(item) }}</span>
                     </div>
                   </div>
                   <div class="flex-1 min-w-0">
@@ -337,102 +337,120 @@
       </div>
     </div>
   </template>
-  <script setup lang="ts">
-  import { ref, computed, onMounted } from 'vue';
-  import { useAuthStore } from '../stores/auth';
-  import { useThemeStore } from '../stores/theme';
- 
-  import { User, LayoutDashboard, Bookmark, MessageSquare, Share2, ThumbsUp, Star } from 'lucide-vue-next';
-  import SearchBar from '../components/SearchBar.vue';
-  import FavoriteButton from '../components/FavoriteButton.vue';
-  import { useFavoritesStore } from '../stores/favorites';
-  import type{Reaction} from '../types/reaction';
-  import type { Comment, Favorite, Share } from '../types/post';
-  const authStore = useAuthStore();
-  const themeStore = useThemeStore();
-  const favoritesStore = useFavoritesStore();
-  
-  const user = computed(() => authStore.user);
-  const isDark = computed(() => themeStore.isDark);
-  
-  // Avatar handling
-  const avatarUrl = computed(() => {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080'; 
-    return user.value?.avatarUrl
-      ? `${apiUrl}${user.value.avatarUrl}`
-      : '';
-  });
-  
-  // User initials
-  const userInitials = computed(() => {
-    return user.value?.name
-      ? user.value.name.split(' ').map(n => n[0]).join('').toUpperCase()
-      : '';
-  });
-  
-  // Quick stats
-  const quickStats = computed(() => ({
-    articlesPublished: user.value?.articlesCount || 24,
-    totalViews: user.value?.totalViews || '12.4K',
-    contributions: user.value?.contributions || 156
-  }));
-  
-  // Trending topics data
-  const trendingTopics = [
-    { tag: 'vue3', icon: 'Code', posts: '2.5k posts' },
-    { tag: 'devops', icon: 'Server', posts: '1.8k posts' },
-    { tag: 'cloud', icon: 'Cloud', posts: '1.2k posts' },
-    { tag: 'database', icon: 'Database', posts: '956 posts' },
-    { tag: 'terminal', icon: 'Terminal', posts: '845 posts' },
-    { tag: 'security', icon: 'Lock', posts: '734 posts' }
-  ];
-  
-  const favorites = computed(() => favoritesStore.items);
-  const searchQuery = ref('');
-  
-  const filteredFavorites = computed(() => {
-    let result = [...favorites.value];
-    if (searchQuery.value) {
-      const query = searchQuery.value.toLowerCase();
-      result = result.filter(item => 
-        item.title.toLowerCase().includes(query) || 
-        item.description.toLowerCase().includes(query)
-      );
-    }
-    return result;
-  });
-  
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('en-US', {
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import { useAuthStore } from '../stores/auth'
+import { useThemeStore } from '../stores/theme'
+import { useFavoritesStore } from '../stores/favorites'
+import { Code, Server, Cloud, Database, Terminal, Lock } from 'lucide-vue-next'
+import type { FavoriteItem } from '../types/Favorite'
+
+// Icons
+import { Star, ThumbsUp, MessageSquare, Share2, User, LayoutDashboard, Bookmark } from 'lucide-vue-next'
+import FavoriteButton from '../components/FavoriteButton.vue'
+
+// Stores
+const authStore = useAuthStore()
+const themeStore = useThemeStore()
+const favoritesStore = useFavoritesStore()
+
+// Computed values
+const user = computed(() => authStore.user)
+const isDark = computed(() => themeStore.isDark)
+
+// Avatar URL
+const avatarUrl = computed(() => {
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+  return user.value?.avatarUrl ? `${apiUrl}${user.value.avatarUrl}` : ''
+})
+
+// User initials
+const userInitials = computed(() => {
+  return user.value?.name
+    ? user.value.name.split(' ').map(n => n[0]).join('').toUpperCase()
+    : ''
+})
+
+// Quick stats
+const quickStats = computed(() => ({
+  articlesPublished: user.value?.articlesCount || 24,
+  totalViews: user.value?.totalViews || '12.4K',
+  contributions: user.value?.contributions || 156
+}))
+
+// Trending topics
+const trendingTopics = [
+  { tag: 'vue3', icon: Code, posts: '2.5k posts' },
+  { tag: 'devops', icon: Server, posts: '1.8k posts' },
+  { tag: 'cloud', icon: Cloud, posts: '1.2k posts' },
+  { tag: 'database', icon: Database, posts: '956 posts' },
+  { tag: 'terminal', icon: Terminal, posts: '845 posts' },
+  { tag: 'security', icon: Lock, posts: '734 posts' }
+]
+
+// Favorites list
+const favorites = computed(() => favoritesStore.items)
+const searchQuery = ref('')
+
+// Filtered favorites with safe access
+const filteredFavorites = computed(() => {
+  let result = [...favoritesStore.items]
+
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    result = result.filter(item =>
+      item.title?.toLowerCase().includes(query) ||
+      item.description?.toLowerCase().includes(query)
+    )
+  }
+
+  return result.map(item => ({
+    ...item,
+    title: item.title || 'Untitled',
+    description: item.description || 'No description available.',
+    likes: item.likes ?? 0,
+    comments: item.comments ?? 0,
+    shares: item.shares ?? 0
+  }))
+})
+
+// Format date
+const formatDate = (timestamp: string): string => {
+  try {
+    return new Date(timestamp).toLocaleDateString('en-US', {
       month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  };
-  
-  const formatNumber = (num: number) => {
-    return new Intl.NumberFormat('en-US', { notation: 'compact' }).format(num);
-  };
-  
-  const getAuthorInitials = (authorId: string): string => {
-  if (authorId === 'unknown') return '?'
-
-  const author = authors.value.find(a => a.id === authorId)
-  if (!author) return '?'
-
-  return (author.firstName[0] + author.lastName[0]).toUpperCase()
+      day: 'numeric'
+    })
+  } catch {
+    return ''
+  }
 }
-  
-  const getAuthorName = (authorId: string): string => {
-  if (authorId === 'unknown') return 'Anonymous'
 
-  const author = authors.value.find(a => a.id === authorId)
-  return author?.name || 'Unknown Author'
-};
-  
-  onMounted(() => {
-    if (favorites.value.length === 0) {
-      favoritesStore.generateMockFavorites();
-    }
-  });
-  </script>
+// Format numbers like 1.2k instead of 1200
+const formatNumber = (num: number): string => {
+  return new Intl.NumberFormat('en-US', { notation: 'compact' }).format(num)
+}
+
+// Get author name
+const getAuthorName = (authorId: string): string => {
+  return authorId || 'Unknown'
+}
+
+// Generate initials from authorId (simplification car on a que l'ID)
+const getAuthorInitials = (item: FavoriteItem): string => {
+  return item.authorId.charAt(0).toUpperCase() || '?'
+}
+
+defineExpose({
+  avatarUrl,
+  userInitials,
+  quickStats,
+  trendingTopics,
+  favorites,
+  filteredFavorites,
+  getAuthorName,
+  getAuthorInitials,
+  formatDate,
+  formatNumber
+})
+</script>
