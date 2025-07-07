@@ -8,8 +8,12 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "messages")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Message {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -28,7 +32,6 @@ public class Message {
     @Column(nullable = false)
     private LocalDateTime sentAt;
 
-    @Column(nullable = false)
     private boolean read;
 
     @ManyToOne(fetch = FetchType.LAZY)

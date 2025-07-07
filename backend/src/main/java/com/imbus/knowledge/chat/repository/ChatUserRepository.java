@@ -7,7 +7,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.Optional;
 import java.util.Set;
 
-public interface UserRepository extends JpaRepository<User, Long> {
+public interface ChatUserRepository extends JpaRepository<User, Long> {
     Optional<User> findByUsername(String username);
 
     @Query("SELECT u FROM User u WHERE u.id IN :ids")

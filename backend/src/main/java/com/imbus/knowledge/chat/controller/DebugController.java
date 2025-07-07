@@ -11,13 +11,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/debug")
 public class DebugController {
 
-    private final UserRepository userRepo;
+    private final ChatUserRepository userRepo;
     private final ChatRepository chatRepo;
     private final MessageRepository msgRepo;
-    private final ReactionRepository reactRepo;
+    private final ChatReactionRepository reactRepo;
 
-    public DebugController(UserRepository userRepo, ChatRepository chatRepo,
-                           MessageRepository msgRepo, ReactionRepository reactRepo) {
+    public DebugController(ChatUserRepository userRepo, ChatRepository chatRepo,
+                           MessageRepository msgRepo, ChatReactionRepository reactRepo) {
         this.userRepo = userRepo;
         this.chatRepo = chatRepo;
         this.msgRepo = msgRepo;

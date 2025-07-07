@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class ReactionService {
-    private final ReactionRepository reactionRepository;
+    private final ChatReactionRepository reactionRepository;
     private final MessageRepository messageRepository;
     private final UserRepository userRepository;
     private final ChatRepository chatRepository;
@@ -33,7 +33,7 @@ public class ReactionService {
 
         reactionRepository.deleteByMessageIdAndUserId(messageId, userId);
 
-        Reaction reaction = new Reaction();
+        ChatReaction reaction = new ChatReaction();
         reaction.setMessage(message);
         reaction.setUser(user);
         reaction.setEmoji(emoji);
@@ -49,7 +49,7 @@ public class ReactionService {
         reactionRepository.deleteByMessageIdAndUserId(messageId, userId);
     }
 
-    private ReactionDto convertToDto(Reaction reaction) {
+    private ReactionDto convertToDto(ChatReaction reaction) {
         return ReactionDto.builder()
                 .id(reaction.getId())
                 .emoji(reaction.getEmoji())

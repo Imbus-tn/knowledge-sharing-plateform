@@ -24,31 +24,37 @@ public class PostResponse {
     private boolean isFavorite;
 
     // Static factory method
-    public static PostResponse from(Post post) {
-        PostResponse response = new PostResponse();
-        response.id = post.getId();
-        response.content = post.getContent();
-        response.imageUrl = post.getImageUrl();
-        response.author = AuthorDto.from(post.getAuthor());
-        response.createdAt = post.getCreatedAt();
-        response.commentCount = post.getComments().size();
-        response.reactionCount = post.getReactions().size();
-        // Set isFavorite based on current user
-        return response;
+    public static PostResponse fromEntity(Post post, boolean isFavorite) {
+        return PostResponse.builder()
+                .id(post.getId())
+                .content(post.getContent())
+                .imageUrl(post.getImageUrl())
+                .author(AuthorDto.builder()
+                        .name(post.getAuthor().getName())
+                        .initials(post.getAuthor().getUsername().substring(0, 2))
+                        .avatarUrl(post.getAuthor().getAvatarUrl())
+                        .build())
+                .createdAt(post.getCreatedAt())
+                .commentCount(post.getComments().size())
+                .reactionCount(post.getReactions().size())
+                .isFavorite(isFavorite)
+                .build();
     }
 
-    // Inner class for author info
+    // Inner class with @Data and @Builder
+    @Data
+    @Builder
     public static class AuthorDto {
         private String name;
         private String initials;
         private String avatarUrl;
 
         public static AuthorDto from(User user) {
-            AuthorDto dto = new AuthorDto();
-            dto.name = user.getName();
-            dto.initials = user.getUsername().substring(0, 2); // Simplified
-            dto.avatarUrl = user.getAvatarUrl();
-            return dto;
+            return AuthorDto.builder()
+                    .name(user.getName())
+                    .initials(user.getUsername().substring(0, 2))
+                    .avatarUrl(user.getAvatarUrl())
+                    .build();
         }
     }
 }

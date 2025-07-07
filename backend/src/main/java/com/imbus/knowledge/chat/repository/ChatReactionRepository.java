@@ -2,13 +2,13 @@ package com.imbus.knowledge.chat.repository;
 
 
 
-import com.imbus.knowledge.chat.entities.Reaction;
+import com.imbus.knowledge.chat.entities.ChatReaction;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface ReactionRepository extends JpaRepository<Reaction, Long> {
+public interface ChatReactionRepository extends JpaRepository<ChatReaction, Long> {
     @Modifying
     @Query("DELETE FROM Reaction r WHERE r.message.id = :messageId AND r.user.id = :userId")
     void deleteByMessageIdAndUserId(

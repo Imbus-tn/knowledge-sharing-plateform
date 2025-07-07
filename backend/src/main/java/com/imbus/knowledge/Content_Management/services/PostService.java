@@ -8,6 +8,7 @@ import com.imbus.knowledge.Content_Management.entities.*;
 import com.imbus.knowledge.Content_Management.exception.PostNotFoundException;
 import com.imbus.knowledge.Content_Management.repositories.*;
 import com.imbus.knowledge.User_Management.entities.User;
+import com.imbus.knowledge.User_Management.entities.UserRole;
 import com.imbus.knowledge.User_Management.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -25,7 +26,7 @@ public class PostService {
     private final UserRepository userRepository;
     private final FavoriteRepository favoriteRepository;
     private final CommentRepository commentRepository;
-    private final ReactionRepository reactionRepository;
+    private final PostReactionRepository reactionRepository;
     private final ReportedPostRepository reportedPostRepository;
     private final ShareRepository shareRepository;
 
@@ -33,7 +34,6 @@ public class PostService {
 
     public Post createPost(CreatePostRequest request, Long userId) {
         User author = getUserById(userId);
-
         Post post = new Post();
         post.setContent(request.getContent());
         post.setImageUrl(request.getImageUrl());
@@ -54,7 +54,8 @@ public class PostService {
 
     public Post updatePost(Long postId, CreatePostRequest request, Long userId) {
         Post post = getPostById(postId);
-        if (!post.getAuthor().getId().equals(userId)) {
+
+        if (!post.getAuthor().getId().equals(userId) && !isUserAdmin(userId)) {
             throw new SecurityException("You are not authorized to update this post.");
         }
 
@@ -67,15 +68,23 @@ public class PostService {
 
     public void deletePost(Long postId, Long userId) {
         Post post = getPostById(postId);
-        if (!post.getAuthor().getId().equals(userId)) {
-            throw new SecurityException("You are not authorized to delete this post.");
+
+        if (!isUserAdmin(userId)) {
+            throw new SecurityException("Only admins can delete posts.");
         }
 
         postRepository.delete(post);
     }
 
-    // ===== INTERACTIONS =====
+    // Helper: Check if user is admin
+    private boolean isUserAdmin(Long userId) {
+        User user = getUserById(userId);
+        return user.getRole() == UserRole.ADMIN;
+    }
 
+    // ===== INTERACTIONS (All users can do these) =====
+
+    @Transactional
     public void toggleFavorite(Long postId, Long userId) {
         Post post = getPostById(postId);
         User user = getUserById(userId);
@@ -105,13 +114,15 @@ public class PostService {
             existingReaction.setType(request.getType());
             reactionRepository.save(existingReaction);
         } else {
-            Reaction reaction = new Reaction();
-            reaction.setUser(user);
-            reaction.setPost(post);
-            reaction.setType(request.getType());
-            reaction.setCreatedAt(LocalDateTime.now());
-            reactionRepository.save(reaction);
+            Reaction newReaction = new Reaction();
+            newReaction.setUser(user);
+            newReaction.setPost(post);
+            newReaction.setType(request.getType());
+            newReaction.setCreatedAt(LocalDateTime.now());
+            reactionRepository.save(newReaction);
         }
+
+
     }
 
     public void addCommentToPost(Long postId, CommentRequest request, Long userId) {
@@ -141,7 +152,6 @@ public class PostService {
         commentRepository.save(reply);
     }
 
-    @Transactional
     public void reactToComment(Long commentId, ReactionRequest request, Long userId) {
         Comment comment = getCommentById(commentId);
         User user = getUserById(userId);

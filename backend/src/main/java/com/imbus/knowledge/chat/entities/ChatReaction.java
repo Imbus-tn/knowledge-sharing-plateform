@@ -7,7 +7,7 @@ import lombok.*;
 @Entity
 @Table(name = "reactions")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-public class Reaction {
+public class ChatReaction {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 

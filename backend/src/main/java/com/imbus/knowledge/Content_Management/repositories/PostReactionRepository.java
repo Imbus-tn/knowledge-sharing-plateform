@@ -6,7 +6,7 @@ import com.imbus.knowledge.Content_Management.entities.Reaction;
 import com.imbus.knowledge.User_Management.entities.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface ReactionRepository extends JpaRepository<Reaction, Long> {
+public interface PostReactionRepository extends JpaRepository<Reaction, Long> {
     Reaction findByUserAndPost(User user, Post post);
     Reaction findByUserAndComment(User user, Comment comment);
 }
