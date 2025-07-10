@@ -1,6 +1,5 @@
 package com.imbus.knowledge.chat.controller;
 
-
 import com.imbus.knowledge.chat.dto.UserPresenceDto;
 import com.imbus.knowledge.chat.services.PresenceService;
 import lombok.RequiredArgsConstructor;

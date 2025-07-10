@@ -1,8 +1,8 @@
 spring:
   datasource:
     username: root
-    password: "08052001"  # Fixed from '080520001'
-    url: jdbc:mysql://127.0.0.1:3306/pfe_project?createDatabaseIfNotExist=true&useSSL=false
+    password: "08052001"
+    url: jdbc:mysql://127.0.0.1:3306/knowledge_platform?createDatabaseIfNotExist=true&useSSL=false
 
   jpa:
     hibernate:
@@ -40,6 +40,6 @@ spring:
 # Custom app properties
 app:
   jwtSecret: YOUR_SECRET_KEY_HERE  # Replace with a strong secret key
-  jwtExpirationMs: 86400000       # 24 hours
+  jwtExpirationMs: 0VmKiU7D7h      # 24 hours
   frontendUrl: http://localhost:5173  # Your Vue dev server URL
   upload-dir: uploads/              # Where uploaded files are stored

@@ -34,7 +34,7 @@ public class Post {
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Reaction> reactions = new ArrayList<>();
+    private List<PostReaction> postReactions = new ArrayList<>();
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Favorite> favorites = new HashSet<>();

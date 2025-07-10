@@ -8,10 +8,11 @@ import java.util.Optional;
 import java.util.Set;
 
 public interface ChatUserRepository extends JpaRepository<User, Long> {
-    Optional<User> findByUsername(String username);
+    Optional<User> findByEmail(String email);
+
 
     @Query("SELECT u FROM User u WHERE u.id IN :ids")
     Set<User> findAllByIdIn(@Param("ids") Set<Long> ids);
 
-    boolean existsByUsername(String username);
+    boolean existsByEmail(String email);
 }

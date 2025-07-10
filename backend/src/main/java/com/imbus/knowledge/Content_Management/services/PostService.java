@@ -108,18 +108,18 @@ public class PostService {
         Post post = getPostById(postId);
         User user = getUserById(userId);
 
-        Reaction existingReaction = reactionRepository.findByUserAndPost(user, post);
+        PostReaction existingPostReaction = reactionRepository.findByUserAndPost(user, post);
 
-        if (existingReaction != null) {
-            existingReaction.setType(request.getType());
-            reactionRepository.save(existingReaction);
+        if (existingPostReaction != null) {
+            existingPostReaction.setType(request.getType());
+            reactionRepository.save(existingPostReaction);
         } else {
-            Reaction newReaction = new Reaction();
-            newReaction.setUser(user);
-            newReaction.setPost(post);
-            newReaction.setType(request.getType());
-            newReaction.setCreatedAt(LocalDateTime.now());
-            reactionRepository.save(newReaction);
+            PostReaction newPostReaction = new PostReaction();
+            newPostReaction.setUser(user);
+            newPostReaction.setPost(post);
+            newPostReaction.setType(request.getType());
+            newPostReaction.setCreatedAt(LocalDateTime.now());
+            reactionRepository.save(newPostReaction);
         }
 
 
@@ -156,18 +156,18 @@ public class PostService {
         Comment comment = getCommentById(commentId);
         User user = getUserById(userId);
 
-        Reaction existingReaction = reactionRepository.findByUserAndComment(user, comment);
+        PostReaction existingPostReaction = reactionRepository.findByUserAndComment(user, comment);
 
-        if (existingReaction != null) {
-            existingReaction.setType(request.getType());
-            reactionRepository.save(existingReaction);
+        if (existingPostReaction != null) {
+            existingPostReaction.setType(request.getType());
+            reactionRepository.save(existingPostReaction);
         } else {
-            Reaction reaction = new Reaction();
-            reaction.setUser(user);
-            reaction.setComment(comment);
-            reaction.setType(request.getType());
-            reaction.setCreatedAt(LocalDateTime.now());
-            reactionRepository.save(reaction);
+            PostReaction postReaction = new PostReaction();
+            postReaction.setUser(user);
+            postReaction.setComment(comment);
+            postReaction.setType(request.getType());
+            postReaction.setCreatedAt(LocalDateTime.now());
+            reactionRepository.save(postReaction);
         }
     }
 

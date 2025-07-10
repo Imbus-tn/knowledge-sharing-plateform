@@ -32,8 +32,8 @@ public class PostController {
         Post createdPost = postService.createPost(request, userId);
 
         // Ensure all collections are initialized to empty (not null)
-        if (createdPost.getReactions() == null) {
-            createdPost.setReactions(new ArrayList<>());
+        if (createdPost.getPostReactions() == null) {
+            createdPost.setPostReactions(new ArrayList<>());
         }
         if (createdPost.getComments() == null) {
             createdPost.setComments(new ArrayList<>());

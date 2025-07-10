@@ -36,7 +36,7 @@ public class PostResponse {
                         .build())
                 .createdAt(post.getCreatedAt())
                 .commentCount(post.getComments().size())
-                .reactionCount(post.getReactions().size())
+                .reactionCount(post.getPostReactions().size())
                 .isFavorite(isFavorite)
                 .build();
     }

@@ -33,7 +33,7 @@ public class ReactionService {
 
         reactionRepository.deleteByMessageIdAndUserId(messageId, userId);
 
-        ChatReaction reaction = new ChatReaction();
+        DiscussionReaction reaction = new DiscussionReaction();
         reaction.setMessage(message);
         reaction.setUser(user);
         reaction.setEmoji(emoji);
@@ -49,7 +49,7 @@ public class ReactionService {
         reactionRepository.deleteByMessageIdAndUserId(messageId, userId);
     }
 
-    private ReactionDto convertToDto(ChatReaction reaction) {
+    private ReactionDto convertToDto(DiscussionReaction reaction) {
         return ReactionDto.builder()
                 .id(reaction.getId())
                 .emoji(reaction.getEmoji())
