@@ -32,7 +32,9 @@ public class Message {
     @Column(nullable = false)
     private LocalDateTime sentAt;
 
+    @Column(name = "`read`")
     private boolean read;
+
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reply_to_id")
