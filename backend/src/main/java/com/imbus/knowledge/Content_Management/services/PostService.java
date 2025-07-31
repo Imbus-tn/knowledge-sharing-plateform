@@ -32,16 +32,7 @@ public class PostService {
 
     // ===== POST CRUD =====
 
-    public Post createPost(CreatePostRequest request, Long userId) {
-        User author = getUserById(userId);
-        Post post = new Post();
-        post.setContent(request.getContent());
-        post.setImageUrl(request.getImageUrl());
-        post.setAuthor(author);
-        post.setCreatedAt(LocalDateTime.now());
 
-        return postRepository.save(post);
-    }
 
     public Post getPostById(Long postId) {
         return postRepository.findById(postId)
@@ -111,13 +102,13 @@ public class PostService {
         PostReaction existingPostReaction = reactionRepository.findByUserAndPost(user, post);
 
         if (existingPostReaction != null) {
-            existingPostReaction.setType(request.getType());
+            existingPostReaction.setEmoji(request.getType());
             reactionRepository.save(existingPostReaction);
         } else {
             PostReaction newPostReaction = new PostReaction();
             newPostReaction.setUser(user);
             newPostReaction.setPost(post);
-            newPostReaction.setType(request.getType());
+            newPostReaction.setEmoji(request.getType());
             newPostReaction.setCreatedAt(LocalDateTime.now());
             reactionRepository.save(newPostReaction);
         }
@@ -159,13 +150,13 @@ public class PostService {
         PostReaction existingPostReaction = reactionRepository.findByUserAndComment(user, comment);
 
         if (existingPostReaction != null) {
-            existingPostReaction.setType(request.getType());
+            existingPostReaction.setEmoji(request.getType());
             reactionRepository.save(existingPostReaction);
         } else {
             PostReaction postReaction = new PostReaction();
             postReaction.setUser(user);
             postReaction.setComment(comment);
-            postReaction.setType(request.getType());
+            postReaction.setEmoji(request.getType());
             postReaction.setCreatedAt(LocalDateTime.now());
             reactionRepository.save(postReaction);
         }
@@ -182,7 +173,15 @@ public class PostService {
 
         reportedPostRepository.save(reportedPost);
     }
-
+    @Transactional
+    public void removeFavorite(Long postId, Long userId) {
+        Post post = getPostById(postId);
+        User user = getUserById(userId);
+        Favorite favorite = favoriteRepository.findByUserAndPost(user, post);
+        if (favorite != null) {
+            favoriteRepository.delete(favorite);
+        }
+    }
     public void sharePost(Long postId, Long userId) {
         Post post = getPostById(postId);
         User user = getUserById(userId);
@@ -193,6 +192,25 @@ public class PostService {
         share.setSharedAt(LocalDateTime.now());
 
         shareRepository.save(share);
+    }
+    public Post createPost(CreatePostRequest request, Long userId) {
+        User author = getUserById(userId);
+
+        if (author.getRole() != UserRole.ADMIN && author.getRole() != UserRole.CONTRIBUTOR) {
+            throw new SecurityException("Only Contributor or Admin can create posts.");
+        }
+
+        Post post = new Post();
+        post.setContent(request.getContent());
+        post.setImageUrl(request.getImageUrl());
+        post.setAuthor(author);
+        post.setCreatedAt(LocalDateTime.now());
+
+        // ✅ Set category and tags
+        post.setCategory(request.getCategory());
+        post.setTags(request.getTags());
+
+        return postRepository.save(post);
     }
 
     // ===== HELPERS =====

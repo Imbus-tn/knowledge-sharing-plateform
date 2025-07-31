@@ -16,4 +16,8 @@ public class FavoritePostResponse {
     private String coverImage;
     private AuthorDto author;
     private LocalDateTime createdAt;
+    private long likes;
+    private long comments;
+    private long shares;
+    private boolean isFavorite = true; // Always true for favorites
 }

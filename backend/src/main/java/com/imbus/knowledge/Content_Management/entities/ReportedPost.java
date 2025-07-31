@@ -26,4 +26,7 @@ public class ReportedPost {
     private String reason;
 
     private LocalDateTime reportedAt;
+    // track if admin has taken action
+
+    private boolean resolved = false;
 }

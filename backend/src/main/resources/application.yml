@@ -2,7 +2,8 @@ spring:
   datasource:
     username: root
     password: "08052001"
-    url: jdbc:mysql://127.0.0.1:3306/knowledge_platform?createDatabaseIfNotExist=true&useSSL=false
+    url: jdbc:mysql://127.0.0.1:3306/knowledge_platform?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+    driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
     hibernate:

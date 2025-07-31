@@ -27,6 +27,9 @@ public class Post {
 
     private int viewCount = 0;
 
+    private String category;
+    @ElementCollection
+    private List<String> tags = new ArrayList<>();
     @ManyToOne
     private User author;
 

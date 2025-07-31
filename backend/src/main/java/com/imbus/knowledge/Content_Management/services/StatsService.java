@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -27,9 +29,26 @@ public class StatsService {
         int shares = shareRepository.countByUserId(userId);
 
         List<String> recentActivity = new ArrayList<>();
-        // You can fetch recent actions from repositories if needed
-        recentActivity.add("Published article on Vue 3");
-        recentActivity.add("Reacted 👍 to TypeScript Guide");
+
+        // ✅ Top categories
+        Map<String, Long> categoryCountMap = userPosts.stream()
+                .filter(post -> post.getCategory() != null)
+                .collect(Collectors.groupingBy(Post::getCategory, Collectors.counting()));
+
+        categoryCountMap.forEach((category, count) -> {
+            recentActivity.add("Published " + count + " " + category + " posts");
+        });
+
+        // ✅ Top tags
+        Map<String, Long> tagCountMap = userPosts.stream()
+                .flatMap(post -> post.getTags().stream())
+                .collect(Collectors.groupingBy(tag -> tag, Collectors.counting()));
+
+        tagCountMap.forEach((tag, count) -> {
+            recentActivity.add("Used tag " + tag + " " + count + " times");
+        });
+
+        // Add other recent activity (like reactions, shares, etc.)
 
         return UserStats.builder()
                 .articlesPublished(articlesPublished)
@@ -40,7 +59,6 @@ public class StatsService {
                 .recentActivity(recentActivity)
                 .build();
     }
-
     private String formatLargeNumber(int count) {
         if (count < 1000) return String.valueOf(count);
         double thousands = Math.round(count / 100.0) / 10.0;

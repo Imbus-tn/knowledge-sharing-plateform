@@ -34,6 +34,9 @@ public class FavoriteService {
                         .avatarUrl(post.getAuthor().getAvatarUrl())
                         .build())
                 .createdAt(post.getCreatedAt())
+                .likes(post.getPostReactions().size()) // Add
+                .comments(post.getComments().size()) // Add
+                .shares(post.getShares().size()) // Add
                 .build();
     }
 }
