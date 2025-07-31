@@ -201,29 +201,7 @@
               <ArrowRight class="w-4 h-4 ml-1" />
             </router-link>
           </div>
-          <div 
-            v-for="activity in recentActivity" 
-            :key="activity.id" 
-            :class="[
-              'flex items-start space-x-4 p-4 rounded-lg mb-3',
-              isDark 
-                ? 'bg-slate-700/30 hover:bg-slate-700/50' 
-                : 'bg-slate-100/90 border-slate-300'
-            ]"
-          >
-            <component 
-              :is="activity.icon" 
-              :class="isDark ? 'text-emerald-500' : 'text-emerald-600'" 
-              class="w-5 h-5 flex-shrink-0" 
-            />
-            <div>
-              <p :class="isDark ? 'text-white' : 'text-slate-900'">
-                {{ activity.description }}
-              </p>
-              <p :class="isDark ? 'text-xs text-slate-400 mt-1' : 'text-xs text-slate-500 mt-1'">
-                {{ activity.time }}
-              </p>
-            </div>
+          
           </div>
         </div>
       </div>
@@ -243,26 +221,7 @@
           ]">
             Quick Stats
           </h3>
-          <div class="grid grid-cols-2 gap-4">
-            <div 
-              v-for="stat in quickStats" 
-              :key="stat.label" 
-              :class="[
-                'p-4 rounded-xl',
-                isDark 
-                  ? 'bg-slate-700/30' 
-                  : 'bg-slate-200/70'
-              ]"
-            >
-              <p :class="isDark ? 'text-slate-300' : 'text-slate-600'">
-                {{ stat.label }}
-              </p>
-              <p :class="[
-                'font-medium',
-                isDark ? 'text-white' : 'text-slate-900'
-              ]">
-                {{ stat.value }}
-              </p>
+          
             </div>
           </div>
         </div>
@@ -292,42 +251,9 @@
               <ArrowRight class="w-4 h-4 ml-1" />
             </router-link>
           </div>
-          <div class="space-y-4">
-            <div 
-              v-for="stat in contributionStats" 
-              :key="stat.label" 
-              class="relative"
-            >
-              <div class="flex items-center justify-between text-sm mb-2">
-                <div class="flex items-center">
-                  <component 
-                    :is="stat.icon" 
-                    :class="isDark ? 'text-emerald-500' : 'text-emerald-600'" 
-                    class="w-4 h-4 mr-2" 
-                  />
-                  <span :class="isDark ? 'text-slate-300' : 'text-slate-600'">
-                    {{ stat.label }}
-                  </span>
-                </div>
-                <div class="flex items-center space-x-2">
-                  <span :class="isDark ? 'text-white' : 'text-slate-900'">
-                    {{ stat.count }}
-                  </span>
-                  <span :class="isDark ? 'text-slate-400' : 'text-slate-500'">
-                    / {{ stat.total }}
-                  </span>
-                </div>
-              </div>
-              <div :class="isDark ? 'bg-slate-700/50' : 'bg-slate-200/50'" class="h-2 rounded-full overflow-hidden">
-                <div 
-                  class="h-full rounded-full transition-all duration-500"
-                  :class="isDark ? 'bg-emerald-500' : 'bg-emerald-600'"
-                  :style="{ width: `${stat.percentage}%` }"
-                ></div>
-              </div>
-            </div>
+          
           </div>
-        </div>
+       
         
         <!-- Activity Heatmap -->
         <div :class="[
@@ -373,9 +299,7 @@
             <span :class="isDark ? 'text-slate-400' : 'text-slate-500'">More</span>
           </div>
         </div>
-      </div>
-    </div>
-  </div>
+    
 </template>
 
 <script setup lang="ts">
@@ -428,7 +352,7 @@ const roleBadgeIcon = computed(() => {
   switch(user.value?.role) {
     case 'ADMIN': return Shield;
     case 'CONTRIBUTOR': return Edit3;
-    default: return User;
+    default: return user;
   }
 });
 
@@ -444,38 +368,7 @@ const roleStyle = (role: UserRole) => {
   };
 };
 
-// Quick stats
-const quickStats = computed(() => [
-  { label: 'Articles Published', value: user.value?.articlesCount || 24 },
-  { label: 'Total Views', value: user.value?.totalViews || '12.4K' },
-  { label: 'Contributions', value: user.value?.contributions || 156 },
- 
-]);
 
-// Contribution stats
-const contributionStats = computed(() => [
-  { 
-    label: 'Technical Articles', 
-    count: user.value?.articlesCount || 24, 
-    total: 30,
-    percentage: Math.round((user.value?.articlesCount || 24) / 30 * 100),
-    icon: FileText 
-  },
-  { 
-    label: 'Code Reviews', 
-    count: user.value?.reviewsCount || 156, 
-    total: 180,
-    percentage: Math.round((user.value?.reviewsCount || 156) / 180 * 100),
-    icon: Code 
-  },
-  { 
-    label: 'Knowledge Shares', 
-    count: user.value?.sharesCount || 42, 
-    total: 50,
-    percentage: Math.round((user.value?.sharesCount || 42) / 50 * 100),
-    icon: Users 
-  }
-]);
 
 // Activity heatmap
 const getActivityClass = (n: number) => {

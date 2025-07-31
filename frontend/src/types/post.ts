@@ -1,73 +1,73 @@
 import type { User } from './user';
 import type { UserRole } from './UserRole';
 import type{Reaction} from './reaction';
+
+
+
 // Main Post Interface
 export interface Post {
-  id: string;
+  id: number; // Changed to number to match backend Long
   content: string;
   imageUrl?: string;
-  author: User;
-  createdAt: string; 
-  updatedAt?: string; 
-  title?: string; // Added for favorites compatibility
-  description?: string; // Added for favorites compatibility
-  likes?: number; // Added for favorites compatibility
+  author: PostAuthor;
+  createdAt: string;
+  updatedAt?: string;
+  title?: string;
+  description?: string;
+  likes?: number;
   isFavorite?: boolean;
-  
-  // Relationships
-  reactions: Reaction[]; 
-  favorites: Favorite[]; 
-  comments: Comment[]; 
-  shares: Share[]; 
+  tags: string[];
+  reactions: Reaction[];
+  favorites: Favorite[];
+  comments: Comment[];
+  shares: Share[];
 }
 
 // Simplified Author interface for API responses
 export interface PostAuthor {
-  id: string;
+  id: number; // Changed to number
   name: string;
   email: string;
   role: UserRole;
   avatarUrl?: string;
-  initials?: string; // Added for UI display
+  initials?: string;
 }
-
-
 
 // Comment Interface
 export interface Comment {
-  id: string;
+  id: number; // Changed to number
   text: string;
   post: Post;
   author: User;
-  parent?: Comment; 
-  createdAt: string; 
+  parent?: Comment;
+  createdAt: string;
   replies?: Comment[];
   reactions?: Reaction[];
 }
 
 // Favorite Interface
 export interface Favorite {
-  id: string;
+  id: number; // Changed to number
   post: Post;
   user: User;
-  createdAt: string; 
+  createdAt: string;
 }
 
 // Share Interface
 export interface Share {
-  id: string;
+  id: number; // Changed to number
   user: User;
   post: Post;
-  sharedAt: string; 
+  sharedAt: string;
 }
 
 // Report Interface
 export interface ReportedPost {
-  id: string;
+  id: number; // Changed to number
   post: Post;
   reporter: User;
   reason: string;
-  reportedAt: string; 
+  reportedAt: string;
 }
 
 // API Response Types
@@ -80,7 +80,7 @@ export interface PostsResponse {
 
 // Request Interfaces
 export interface ReactionRequest {
-  type: string; 
+  type: string;
 }
 
 export interface CommentRequest {
@@ -96,4 +96,11 @@ export interface CreatePostRequest {
   imageUrl?: string;
   title?: string;
   description?: string;
+}
+export interface ReportedPost {
+  id: number;
+  post: Post;
+  reporter: User;
+  reason: string;
+  reportedAt: string;
 }

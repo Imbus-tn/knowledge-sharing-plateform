@@ -9,7 +9,7 @@ export interface AuthorDto {
 }
 
 export interface FeedItem {
-  id: string;
+  id: number;
   title?: string;
   description?: string;
   coverImage?: string;

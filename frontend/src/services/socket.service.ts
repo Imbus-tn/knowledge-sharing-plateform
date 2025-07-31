@@ -1,18 +1,33 @@
 import { Client } from '@stomp/stompjs';
 import { useAuthStore } from '../stores/auth';
-
+import SockJS from 'sockjs-client';
 class SocketService {
-  private client: Client;
+  private client: Client | null = null;
   private subscriptions: Map<string, (payload: any) => void> = new Map();
-  
+
   constructor() {
-    this.client = new Client({
-      brokerURL: import.meta.env.VITE_WS_URL || 'ws://localhost:8080/ws',
-      connectHeaders: this.getAuthHeaders(),
+    // Don't create the client here. Create it lazily in connect()
+  }
+
+  private getAuthHeaders() {
+    const authStore = useAuthStore();
+    return {
+      Authorization: `Bearer ${authStore.accessToken?.valueOf() || ''}`
+    };
+  }
+
+  connect() {
+    if (this.client && this.client.active) return;
+
+    // Create client only when connect() is called (after Pinia is ready)
+  this.client = new Client({
+  webSocketFactory: () => new SockJS(import.meta.env.VITE_WS_URL || 'http://localhost:8080/ws'),
+      connectHeaders: this.getAuthHeaders(), // call here, not before
+      debug: (str) => console.log('[WS]', str),
       reconnectDelay: 5000,
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
-      debug: (str) => console.log('[WS]', str),
+      
       onConnect: () => {
         this.subscriptions.forEach((callback, topic) => {
           this.subscribe(topic, callback);
@@ -22,29 +37,22 @@ class SocketService {
         console.error('WebSocket error:', frame.headers.message);
       }
     });
-  }
 
-  private getAuthHeaders() {
-    const authStore = useAuthStore();
-    return {
-      Authorization: `Bearer ${authStore.accessToken?.valueOf || ''}`
-    };
-  }
-
-  connect() {
-    if (!this.client.active) {
-      this.client.activate();
-    }
+    this.client.activate();
   }
 
   disconnect() {
-    if (this.client.active) {
+    if (this.client && this.client.active) {
       this.client.deactivate();
+       this.subscriptions.clear();
     }
-    this.subscriptions.clear();
+   
   }
 
   subscribe(topic: string, callback: (payload: any) => void) {
+    if (!this.client) {
+      throw new Error('WebSocket client is not connected');
+    }
     const sub = this.client.subscribe(topic, (message) => {
       callback(JSON.parse(message.body));
     });
@@ -53,7 +61,7 @@ class SocketService {
   }
 
   send(destination: string, body: any) {
-    if (!this.client.connected) {
+    if (!this.client || !this.client.connected) {
       throw new Error('WebSocket not connected');
     }
     this.client.publish({
@@ -64,4 +72,16 @@ class SocketService {
   }
 }
 
+let socketServiceInstance: SocketService | null = null;
+
+
+
+export function getSocketService() {
+  if (!socketServiceInstance) {
+    socketServiceInstance = new SocketService();
+  }
+  return socketServiceInstance;
+}
+
 export const socketService = new SocketService();
+

@@ -60,12 +60,12 @@
             ]"
           >
             <Bell class="w-6 h-6" />
-            <div v-if="unreadNotifications" class="absolute -top-1 -right-1">
+            <!--<div v-if="unreadNotifications" class="absolute -top-1 -right-1">
               <span class="animate-ping absolute h-4 w-4 rounded-full bg-red-400 opacity-75"></span>
               <span class="relative bg-red-500 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">
                 {{ unreadNotifications > 9 ? '9+' : unreadNotifications }}
               </span>
-            </div>
+            </div>-->
           </router-link>
           <!-- Discussions -->
           <router-link
@@ -79,12 +79,12 @@
             ]"
           >
             <MessageSquare class="w-6 h-6" />
-            <div v-if="unreadMessages" class="absolute -top-1 -right-1">
+           <!-- <div v-if="unreadMessages" class="absolute -top-1 -right-1">
               <span class="animate-ping absolute h-4 w-4 rounded-full bg-emerald-400 opacity-75"></span>
               <span class="relative bg-emerald-500 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">
                 {{ unreadMessages > 9 ? '9+' : unreadMessages }}
               </span>
-            </div>
+            </div>-->
           </router-link>
           <div :class="isDark ? 'bg-slate-700' : 'bg-slate-200'" class="w-px h-8 mx-2"></div>
           <!-- Profile Dropdown -->
@@ -231,6 +231,22 @@
                   />
                   <span>Manage Users</span>
                 </router-link>
+                 <router-link v-if="authStore.isAdmin" to="/reported-posts" 
+                  :class="[
+                    'flex items-center px-4 py-3 text-sm transition-colors',
+                    isDark 
+                      ? 'text-slate-300 hover:bg-slate-700 hover:text-white' 
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  ]"
+                  @click="showProfileMenu = false"
+                >
+                  <Bell 
+                    :class="isDark ? 'text-slate-400' : 'text-slate-500'" 
+                    class="w-5 h-5 mr-3" 
+                  />
+                  <span>Reported Posts</span>
+                  </router-link>
+
               </div>
 
               <!-- Logout -->
@@ -299,8 +315,8 @@ const userInitials = computed(() => {
     : '';
 });
 
-const unreadNotifications = computed(() => authStore.unreadNotifications);
-const unreadMessages = computed(() => authStore.unreadMessages);
+//const unreadNotifications = computed(() => authStore.unreadNotifications);
+//const unreadMessages = computed(() => authStore.unreadMessages);
 const isDark = computed(() => themeStore.isDark);
 const toggleTheme = () => themeStore.toggleTheme();
 

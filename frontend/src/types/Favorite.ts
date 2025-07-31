@@ -1,17 +1,19 @@
-// src/types/favorite.ts
-
 export interface FavoriteItem {
-  id: string;
+  id: number;
   title: string;
   description: string;
   coverImage?: string;
-  authorId: string;
+  author: {
+    name: string;
+    initials: string;
+    role?: string;
+    avatarUrl?: string;
+  };
   createdAt: string;
   likes: number;
   comments: number;
   shares: number;
   isFavorite?: boolean;
-  // Add any other properties you need for favorite items
 }
 
 export interface FavoritesState {
@@ -20,7 +22,6 @@ export interface FavoritesState {
   error: string | null;
 }
 
-// If you need additional types for the API responses:
 export interface FavoriteResponse {
   success: boolean;
   message?: string;

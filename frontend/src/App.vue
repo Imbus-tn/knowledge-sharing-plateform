@@ -92,8 +92,5 @@ watch(
   { immediate: true }
 );
 
-// Initialize theme on mount
-onMounted(() => {
-  themeStore.initTheme();
-});
+
 </script>

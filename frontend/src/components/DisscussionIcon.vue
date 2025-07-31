@@ -56,15 +56,15 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { MessageSquare } from 'lucide-vue-next';
-import { useDiscussionStore } from '../stores/chat';
+import { useChatStore } from '../stores/chat';
 
 const router = useRouter();
-const discussionStore = useDiscussionStore();
+const discussionStore = useChatStore();
 const showPreview = ref(false);
 let previewTimeout: number | null = null;
 
 const unreadCount = computed(() => discussionStore.unreadCount);
-const latestMessages = computed(() => discussionStore.latestMessages);
+const latestMessages = computed(() => discussionStore.latestMessages as NonNullable<typeof discussionStore.latestMessages[number]>[]);
 
 const handleMouseEnter = () => {
   previewTimeout = window.setTimeout(() => {
@@ -80,7 +80,7 @@ const handleMouseLeave = () => {
   showPreview.value = false;
 };
 
-const goToDiscussion = (chatId: string) => {
+const goToDiscussion = (chatId: number) => {
   discussionStore.markChatAsRead(chatId);
   router.push(`/discussions?chat=${chatId}`);
   showPreview.value = false;

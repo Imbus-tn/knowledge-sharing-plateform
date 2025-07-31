@@ -4,11 +4,24 @@ import { useRoute, useRouter } from 'vue-router';
 import { useChatStore } from '../stores/chat';
 import { useAuthStore } from '../stores/auth';
 import { formatDate, formatTime } from '../utils/date';
-import { socketService } from '../services/socket.service';
+import { socketService } from '../services/socket.service'; 
+
 import type { Message } from '../types/chat';
 import { Check, Users, Reply, Smile, X, Plus, Send, MessageSquare } from 'lucide-vue-next';
 import type { Reaction } from '../types/reaction';
 
+
+import { User as UserIcon } from 'lucide-vue-next';
+import type { ChatParticipant } from '../types/chatParticipants';
+
+
+
+
+// Computed: Online Participants
+const onlineParticipants = computed(() => {
+  if (!chatStore.currentChat) return [];
+  return chatStore.currentChat.participants.filter((p: ChatParticipant) => chatStore.isUserOnline(p.id));
+});
 const chatStore = useChatStore();
 const authStore = useAuthStore();
 const route = useRoute();
@@ -164,7 +177,7 @@ const showDateSeparator = (message: Message, index: number) => {
                 </h3>
                 <p class="text-sm text-slate-400">
                   <span v-if="isCurrentChatGroup">
-                    {{ chatStore.currentChat.participants.filter(p => chatStore.isUserOnline(p.id)).length }} online • 
+                   <span>{{ onlineParticipants.length }} online • {{ chatStore.currentChat?.participants.length }} members</span> 
                     {{ chatStore.currentChat.participants.length }} members
                   </span>
                   <span v-else>

@@ -1,206 +1,251 @@
-import { ref, computed } from 'vue'
-import { defineStore } from 'pinia'
-import { apiClient } from '../api'
-import { useAuthStore } from './auth'
-import type { Post } from '../types/post'
-import { UserRole } from '../types/UserRole'
+
+import { ref, computed } from 'vue';
+import { defineStore } from 'pinia';
+import { apiClient } from '../api';
+import { useAuthStore } from './auth';
+import type { Post } from '../types/post';
+import { UserRole } from '../types/UserRole';
 
 export const useFeedStore = defineStore('feed', () => {
-  const authStore = useAuthStore()
-  const posts = ref<Post[]>([])
-  const loading = ref<boolean>(false)
-  const error = ref<string | null>(null)
+  const authStore = useAuthStore();
+  const posts = ref<Post[]>([]);
+  const loading = ref<boolean>(false);
+  const error = ref<string | null>(null);
 
   const getPostById = computed(() => {
-    return (postId: string) => {
-      return posts.value.find((post: Post) => post.id === postId)
-    }
-  })
+    return (postId: number) => {
+      return posts.value.find((post: Post) => post.id === postId);
+    };
+  });
 
   const fetchPosts = async (): Promise<void> => {
     try {
-      loading.value = true
-      const response = await apiClient.get('/content/posts')
-      let postData: Post[] = []
+      loading.value = true;
+      const response = await apiClient.get('/content/posts');
+      let postData: Post[] = [];
 
       if (Array.isArray(response.data)) {
         postData = response.data.map((post: any) => ({
           ...post,
-          id: String(post.id),
+          id: post.id, // Keep as number
           reactions: post.reactions || [],
           favorites: post.favorites || [],
           comments: post.comments || [],
           shares: post.shares || [],
           author: {
-            id: post.authorId ?? 'unknown',
+            id: post.authorId ?? 0,
             name: post.authorName ?? 'Anonymous',
             email: post.authorEmail ?? '',
-            role: post.authorRole ?? UserRole.USER
-          }
-        }))
+            role: post.authorRole ?? UserRole.USER,
+            avatarUrl: post.authorAvatarUrl,
+            initials: post.authorInitials,
+          },
+        }));
       } else if (response.data && Array.isArray(response.data.content)) {
         postData = response.data.content.map((post: any) => ({
-          id: String(post.id),
+          id: post.id, // Keep as number
           content: post.content || '',
           imageUrl: post.imageUrl || undefined,
           author: {
-            id: post.author.id ?? 'unknown',
+            id: post.author.id ?? 0,
             name: post.author.name ?? 'Anonymous',
             email: post.author.email ?? '',
             role: post.author.role ?? UserRole.USER,
-            avatarUrl: post.author.avatarUrl
+            avatarUrl: post.author.avatarUrl,
+            initials: post.author.initials,
           },
           createdAt: post.createdAt || new Date().toISOString(),
           reactions: post.reactions || [],
           favorites: post.favorites || [],
           comments: post.comments || [],
-          shares: post.shares || []
-        }))
+          shares: post.shares || [],
+        }));
       } else {
-        postData = []
+        postData = [];
       }
 
-      // Sort by date with explicit typing
       postData.sort((a: Post, b: Post) => {
-        const dateA = new Date(a.createdAt).getTime()
-        const dateB = new Date(b.createdAt).getTime()
-        return dateB - dateA
-      })
+        const dateA = new Date(a.createdAt).getTime();
+        const dateB = new Date(b.createdAt).getTime();
+        return dateB - dateA;
+      });
 
-      posts.value = postData
+      posts.value = postData;
     } catch (err: any) {
-      error.value = err.message || 'Failed to load posts'
-      console.error("Error fetching posts:", err)
+      error.value = err.message || 'Failed to load posts';
+      console.error('Error fetching posts:', err);
     } finally {
-      loading.value = false
+      loading.value = false;
     }
-  }
+  };
 
-  const createPost = async (postData: { content: string; imageUrl?: string }): Promise<void> => {
+  const createPost = async (postData: {
+    content: string;
+    imageUrl: string | null;
+    linkUrl?: string;
+    additionalNotes?: string;
+    tags: string[];
+  }) => {
     try {
-      loading.value = true
-      const response = await apiClient.post('/content/posts', postData)
-      const backendPost = response.data
+      loading.value = true;
+      const response = await apiClient.post('/content/posts', {
+        content: postData.content,
+        imageUrl: postData.imageUrl,
+        tags: postData.tags,
+      });
+
+      const backendPost = response.data;
 
       const newPost: Post = {
-        id: String(backendPost.id),
+        id: backendPost.id, // Keep as number
         content: backendPost.content || postData.content,
         imageUrl: backendPost.imageUrl || postData.imageUrl || undefined,
         author: {
-          id: backendPost.authorId ?? authStore.user?.id ?? 'unknown',
-          name: backendPost.authorName || authStore.user?.name || 'Anonymous',
-          email: backendPost.authorEmail || authStore.user?.email || '',
+          id: backendPost.author?.id ?? authStore.user?.id ?? 0,
+          name: backendPost.author?.name ?? authStore.user?.name ?? 'Anonymous',
+          email: backendPost.author?.email ?? authStore.user?.email ?? '',
           role: authStore.user?.role || UserRole.USER,
-          avatarUrl: backendPost.author?.avatarUrl ?? authStore.user?.avatarUrl ?? undefined
+          avatarUrl: backendPost.author?.avatarUrl ?? authStore.user?.avatarUrl,
+          initials: backendPost.author?.initials ?? authStore.user?.initials,
         },
         createdAt: backendPost.createdAt || new Date().toISOString(),
         reactions: backendPost.reactions || [],
         favorites: backendPost.favorites || [],
         comments: backendPost.comments || [],
-        shares: backendPost.shares || []
-      }
+        shares: backendPost.shares || [],
+        tags: backendPost.tags || postData.tags || [],
+      };
 
       if (newPost.id && newPost.content) {
-        posts.value.unshift(newPost)
+        posts.value.unshift(newPost);
       } else {
-        throw new Error('Incomplete post data from server')
+        throw new Error('Incomplete post data from server');
       }
     } catch (err: any) {
-      error.value = err.message || 'Failed to create post.'
-      console.error('Error creating post:', err)
-      throw err
+      error.value = err.message || 'Failed to create post.';
+      console.error('Failed to create post:', err);
+      throw err;
     } finally {
-      loading.value = false
+      loading.value = false;
     }
-  }
+  };
 
-  const updatePost = async (postId: string, content: string, imageUrl?: string): Promise<void> => {
+  const updatePost = async (postId: number, content: string, imageUrl?: string): Promise<void> => {
     try {
-      loading.value = true
-      const data = { content, ...(imageUrl && { imageUrl }) }
-      const response = await apiClient.put(`/content/posts/${postId}`, data)
+      loading.value = true;
+      const data = { content, ...(imageUrl && { imageUrl }) };
+      const response = await apiClient.put(`/content/posts/${postId}`, data);
       const updatedPost = {
         ...response.data,
-        id: String(response.data.id),
+        id: response.data.id, // Keep as number
         reactions: response.data.reactions || [],
         favorites: response.data.favorites || [],
         comments: response.data.comments || [],
-        shares: response.data.shares || []
-      }
+        shares: response.data.shares || [],
+      };
 
-      const index = posts.value.findIndex((p: Post) => p.id === postId)
+      const index = posts.value.findIndex((p: Post) => p.id === postId);
       if (index !== -1) {
-        posts.value[index] = updatedPost
+        posts.value[index] = updatedPost;
       }
     } catch (err: any) {
-      error.value = err.message || 'Failed to update post.'
-      console.error('Error updating post:', err)
-      throw err
+      error.value = err.message || 'Failed to update post.';
+      console.error('Error updating post:', err);
+      throw err;
     } finally {
-      loading.value = false
+      loading.value = false;
     }
-  }
+  };
 
-  const deletePost = async (postId: string): Promise<void> => {
+  const deletePost = async (postId: number): Promise<void> => {
     try {
-      loading.value = true
-      await apiClient.delete(`/content/posts/${postId}`)
-      posts.value = posts.value.filter(post => post.id !== postId)
+      loading.value = true;
+      await apiClient.delete(`/content/posts/${postId}`);
+      posts.value = posts.value.filter(post => post.id !== postId);
     } catch (err: any) {
-      error.value = err.message || 'Failed to delete post.'
-      console.error('Error deleting post:', err)
-      throw err
+      error.value = err.message || 'Failed to delete post.';
+      console.error('Error deleting post:', err);
+      throw err;
     } finally {
-      loading.value = false
+      loading.value = false;
     }
-  }
+  };
 
-  const toggleFavorite = async (postId: string): Promise<void> => {
+  const toggleFavorite = async (postId: number): Promise<void> => {
     try {
-      await apiClient.post(`/content/posts/${postId}/favorite`, {})
-      const post = posts.value.find(p => p.id === postId)
+      await apiClient.post(`/content/posts/${postId}/favorite`, {});
+      const post = posts.value.find(p => p.id === postId);
       if (post) {
-        post.isFavorite = !post.isFavorite
+        post.isFavorite = !post.isFavorite;
       }
     } catch (err: any) {
-      error.value = err.message || 'Failed to toggle favorite.'
-      console.error('Error toggling favorite:', err)
-      throw err
+      error.value = err.message || 'Failed to toggle favorite.';
+      console.error('Error toggling favorite:', err);
+      throw err;
     }
-  }
+  };
 
-  const reactToPost = async (postId: string, reactionType: string): Promise<void> => {
+  const reactToPost = async (postId: number, reactionType: string): Promise<void> => {
     try {
-      const response = await apiClient.post(`/content/posts/${postId}/react`, { type: reactionType })
-      const newReaction = response.data
-      const post = posts.value.find(p => p.id === postId)
+      const response = await apiClient.post(`/content/posts/${postId}/react`, { type: reactionType });
+      const newReaction = response.data;
+      const post = posts.value.find(p => p.id === postId);
       if (post && newReaction) {
-        post.reactions.push(newReaction)
+        post.reactions.push(newReaction);
       }
     } catch (err: any) {
-      error.value = err.message || 'Failed to react to post.'
-      console.error('Error reacting to post:', err)
-      throw err
+      error.value = err.message || 'Failed to react to post.';
+      console.error('Error reacting to post:', err);
+      throw err;
     }
-  }
+  };
 
-  const addComment = async (postId: string, text: string): Promise<void> => {
+  const addComment = async (postId: number, text: string): Promise<void> => {
     try {
-      loading.value = true
-      const response = await apiClient.post(`/content/posts/${postId}/comment`, { text })
-      const newComment = response.data
-      const post = posts.value.find(p => p.id === postId)
+      loading.value = true;
+      const response = await apiClient.post(`/content/posts/${postId}/comment`, { text });
+      const newComment = response.data;
+      const post = posts.value.find(p => p.id === postId);
       if (post && newComment) {
-        post.comments.push(newComment)
+        post.comments.push(newComment);
       }
     } catch (err: any) {
-      error.value = err.message || 'Failed to add comment.'
-      console.error('Error adding comment:', err)
-      throw err
+      error.value = err.message || 'Failed to add comment.';
+      console.error('Error adding comment:', err);
+      throw err;
     } finally {
-      loading.value = false
+      loading.value = false;
     }
+  };
+  // Add these actions to your store
+
+const reportPost = async (postId: number, reportData: { reason: string }): Promise<void> => {
+  try {
+    loading.value = true
+    await apiClient.post(`/content/posts/${postId}/report`, reportData)
+    // Optional: show success in UI
+  } catch (err: any) {
+    error.value = err.message || 'Failed to report post'
+    console.error("Error reporting post:", err)
+    throw err
+  } finally {
+    loading.value = false
   }
+};
+
+const sharePost = async (postId: number): Promise<void> => {
+  try {
+    loading.value = true
+    await apiClient.post(`/content/posts/${postId}/share`)
+    // Optional: update share count
+  } catch (err: any) {
+    error.value = err.message || 'Failed to share post'
+    console.error("Error sharing post:", err)
+    throw err
+  } finally {
+    loading.value = false
+  }
+};
 
   return {
     posts,
@@ -213,6 +258,8 @@ export const useFeedStore = defineStore('feed', () => {
     deletePost,
     toggleFavorite,
     reactToPost,
-    addComment
-  }
-})
+    addComment,
+     reportPost,   // ✅ Add this
+      sharePost
+  };
+});

@@ -16,6 +16,7 @@ import FavoritesPage from '../views/FavoritesPage.vue';
 import InviteUserPage from '../views/InviteUserPage.vue';
 import NotificationsPage from '../views/NotificationsPage.vue';
 import { useAuthStore } from '../stores/auth';
+import ReportPostPage from '../views/ReportPostPage.vue';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -99,22 +100,25 @@ const router = createRouter({
         name: 'favorites',
         component: FavoritesPage
       },
-      {
-        path: '/favorites',
-        name: 'favorites',
-        component: FavoritesPage
-      },
+   
       {
         path: '/notifications',
         name: 'notifications',
         component: NotificationsPage
       },
+     
       {
         path: '/invite-user',
         name: 'invite-user',
         component: InviteUserPage,
         meta: { requiresAuth: true }
-      }
+      },
+      {
+      path: '/reported-posts',
+      name: 'reported-posts',
+      component: ReportPostPage,
+      meta: { requiresAuth: true, requiredRole: 'ADMIN' }
+    }
   ]
 });
 
@@ -128,6 +132,13 @@ router.beforeEach(async (to) => {
 
   if (to.meta.requiresGuest && isAuthenticated) {
     return '/feed';
+  }
+  // Role-based guard
+  if (to.meta.requiredRole) {
+    if (!isAuthenticated) return '/login';
+    if (authStore.user?.role !== to.meta.requiredRole) {
+      return '/feed'; // or '/unauthorized'
+    }
   }
 })
 

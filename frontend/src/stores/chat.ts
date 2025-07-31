@@ -1,29 +1,51 @@
 import { defineStore } from 'pinia';
 import { chatApi } from '../api/chat';
-import { socketService } from '../services/socket.service';
-import type { 
-  Chat, 
-  Message, 
+import { getSocketService } from '../services/socket.service';
+
+import type {
+  Chat,
+  Message,
   Reaction,
-  SendMessageRequest,
+  MessagePreview,
+  User,
   ReactionRequest,
-  MessagePreview
+  SendMessageRequest
 } from '../types/chat';
 
+const socketService = getSocketService();
+
+interface ChatState {
+  chats: Chat[];
+  currentChat: Chat | null;
+  messages: Message[];
+  unreadCount: number;
+  onlineUsers: Set<number>;
+  showDiscussionPanel: boolean;
+  socketsInitialized: boolean;
+}
+
 export const useChatStore = defineStore('chat', {
-  state: () => ({
-    chats: [] as Chat[],
-    currentChat: null as Chat | null,
-    messages: [] as Message[],
+  state: (): ChatState => ({
+    chats: [],
+    currentChat: null,
+    messages: [],
     unreadCount: 0,
-    onlineUsers: new Set<number>()
+    onlineUsers: new Set<number>(),
+    showDiscussionPanel: false,
+    socketsInitialized: false
   }),
 
   actions: {
     async fetchChats() {
       this.chats = await chatApi.getAllChats();
       this.calculateUnreadCount();
-      this.setupSocketListeners();
+
+      // Only initialize socket connection once
+      if (!this.socketsInitialized) {
+        socketService.connect();
+        this.setupSocketListeners();
+        this.socketsInitialized = true;
+      }
     },
 
     async fetchChat(chatId: number) {
@@ -34,10 +56,7 @@ export const useChatStore = defineStore('chat', {
     },
 
     async createGroupChat(name: string, participantIds: number[]) {
-      const chat = await chatApi.createGroupChat({
-        name,
-        participantIds
-      });
+      const chat = await chatApi.createGroupChat({ name, participantIds });
       this.chats.unshift(chat);
       return chat;
     },
@@ -73,7 +92,6 @@ export const useChatStore = defineStore('chat', {
 
     async deleteMessage(messageId: number) {
       if (!this.currentChat) return;
-      
       await chatApi.deleteMessage(this.currentChat.id, messageId);
       this.messages = this.messages.filter((m: Message) => m.id !== messageId);
     },
@@ -89,46 +107,74 @@ export const useChatStore = defineStore('chat', {
       await chatApi.toggleReaction(this.currentChat.id, request);
     },
 
-    setupSocketListeners() {
-      socketService.subscribe('/topic/new-message', (incomingMessage: any) => {
-        const message: Message = {
-          ...incomingMessage,
-          chatId: incomingMessage.chatId || this.currentChat?.id || 0,
-          isRead: incomingMessage.isRead || false,
-          reactions: incomingMessage.reactions || [],
-          isSent: incomingMessage.isSent || true,
-          isForwarded: incomingMessage.isForwarded || false
-        };
+    addMessage(chatId: number, message: Omit<Message, 'id' | 'createdAt' | 'isRead'>) {
+      const chat = this.chats.find((c: Chat) => c.id === chatId);
+      if (!chat) return;
 
-        const chat = this.chats.find((c: Chat) => c.id === message.chatId);
-        if (chat) {
-          const lastMessage: MessagePreview = {
-            id: message.id,
-            text: message.text,
-            sender: message.sender,
-            createdAt: message.createdAt,
-            isRead: message.isRead
-          };
-          
-          chat.lastMessage = lastMessage;
-          chat.lastActivity = message.createdAt;
-          
-          if (message.chatId === this.currentChat?.id) {
-            this.messages.push(message);
-            chat.unreadCount = 0;
-          } else {
-            chat.unreadCount++;
-          }
-          
-          this.calculateUnreadCount();
+      const newMessage: Message = {
+        ...message,
+        id: Date.now(),
+        createdAt: new Date().toISOString(),
+        isRead: message.isSent || false
+      };
+
+      if (!chat.messages) {
+        chat.messages = [];
+      }
+
+      chat.messages.push(newMessage);
+      chat.lastActivity = newMessage.createdAt;
+      chat.lastMessage = {
+        id: newMessage.id,
+        text: newMessage.text,
+        sender: newMessage.sender,
+        createdAt: newMessage.createdAt,
+        isRead: newMessage.isRead
+      };
+
+      if (!newMessage.isSent) {
+        chat.unreadCount++;
+        this.calculateUnreadCount();
+      }
+    },
+
+    calculateUnreadCount() {
+      this.unreadCount = this.chats.reduce((sum, chat) => sum + chat.unreadCount, 0);
+    },
+
+    markChatAsRead(chatId: number) {
+      const chat = this.chats.find((c: Chat) => c.id === chatId);
+      if (!chat) return;
+
+      chat.messages?.forEach(message => {
+        if (!message.isRead && !message.isSent) {
+          message.isRead = true;
         }
       });
 
-      socketService.subscribe('/topic/reaction', (incomingReaction: any) => {
+      chat.unreadCount = 0;
+      this.calculateUnreadCount();
+    },
+
+    setupSocketListeners() {
+      socketService.subscribe('/topic/new-message', (incoming: any) => {
+        const message: Omit<Message, 'id' | 'createdAt' | 'isRead'> = {
+          ...incoming,
+          text: incoming.content,
+          sender: incoming.sender,
+          chatId: incoming.chatId,
+          isSent: false,
+          reactions: []
+        };
+
+        this.addMessage(message.chatId, message);
+      });
+
+      socketService.subscribe('/topic/reaction', (incoming: any) => {
         const reaction: Reaction = {
-          ...incomingReaction,
-          messageId: incomingReaction.messageId || 0,
-          createdAt: incomingReaction.createdAt || new Date().toISOString()
+          ...incoming,
+          messageId: incoming.messageId,
+          createdAt: incoming.createdAt || new Date().toISOString()
         };
 
         const message = this.messages.find((m: Message) => m.id === reaction.messageId);
@@ -136,23 +182,19 @@ export const useChatStore = defineStore('chat', {
           if (!message.reactions) {
             message.reactions = [];
           }
-          
-          message.reactions = message.reactions.filter(
-            (r: Reaction) => !(r.user.id === reaction.user.id && r.emoji === reaction.emoji)
-          );
           message.reactions.push(reaction);
         }
       });
 
-      socketService.subscribe('/topic/presence', (update: { userId: number, online: boolean }) => {
+      socketService.subscribe('/topic/presence', (update: { userId: number; online: boolean }) => {
         if (update.online) {
           this.onlineUsers.add(update.userId);
         } else {
           this.onlineUsers.delete(update.userId);
         }
-        
+
         this.chats.forEach((chat: Chat) => {
-          chat.participants.forEach((p) => {
+          chat.participants.forEach((p: User) => {
             if (p.id === update.userId) {
               p.online = update.online;
               if (!update.online) {
@@ -162,36 +204,47 @@ export const useChatStore = defineStore('chat', {
           });
         });
       });
-    },
-
-    calculateUnreadCount() {
-      this.unreadCount = this.chats.reduce((sum: number, chat: Chat) => sum + chat.unreadCount, 0);
-    },
-
-    isUserOnline(userId: number): boolean {
-      return this.onlineUsers.has(userId);
     }
   },
 
   getters: {
+    latestMessages: (state: ChatState) => {
+      return state.chats
+        .map((chat: Chat) => {
+          const lastMessage = chat.messages?.[chat.messages.length - 1];
+          if (!lastMessage) return null;
+          return {
+            id: lastMessage.id,
+            chatId: chat.id,
+            sender: lastMessage.sender,
+            preview: lastMessage.text.length > 30
+              ? lastMessage.text.substring(0, 30) + '...'
+              : lastMessage.text,
+            time: lastMessage.createdAt,
+            unread: !lastMessage.isRead && !lastMessage.isSent
+          };
+        })
+        .filter(Boolean);
+    },
+
     getChatById: (state) => (id: number) => {
       return state.chats.find((chat: Chat) => chat.id === id);
     },
-    
+
+    isUserOnline: (state) => (userId: number) => {
+      return state.onlineUsers.has(userId);
+    },
+
     getParticipantStatus: (state) => (userId: number) => {
-      if (state.onlineUsers.has(userId)) {
-        return 'online';
-      }
-      
+      if (state.onlineUsers.has(userId)) return 'online';
+
       const chat = state.currentChat;
       if (!chat) return 'offline';
-      
-      const participant = chat.participants.find((p) => p.id === userId);
-      return participant?.lastSeen ? `last seen ${formatLastSeen(participant.lastSeen)}` : 'offline';
+
+      const participant = chat.participants.find((p: User) => p.id === userId);
+      return participant?.lastSeen
+        ? `last seen ${new Date(participant.lastSeen).toLocaleTimeString()}`
+        : 'offline';
     }
   }
 });
-
-function formatLastSeen(timestamp: string): string {
-  return new Date(timestamp).toLocaleTimeString();
-}

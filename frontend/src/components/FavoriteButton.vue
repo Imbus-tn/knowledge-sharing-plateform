@@ -22,7 +22,7 @@ import { useFavoritesStore } from '../stores/favorites'
 
 const props = defineProps<{
   item: {
-    id: string
+    id: number
     title?: string
     description?: string
     coverImage?: string
