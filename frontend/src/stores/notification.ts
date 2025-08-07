@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import axios from 'axios';
-
+import { getSocketService } from '../services/socket.service'; 
 export interface Notification {
   id: string;type: 'system' | 'post' | 'reaction' | 'comment' | 'favorite' | 'error';
   message: string;
@@ -22,6 +22,7 @@ interface NotificationState {
   unreadCount: number;
   showNotificationPanel: boolean;
   currentUserId: string | null;
+  
 }
 
 export const useNotificationStore = defineStore('notification', {
@@ -110,6 +111,16 @@ export const useNotificationStore = defineStore('notification', {
           icon: '/vite.svg'
         });
       }
-    }
-  }
+    },
+       // ✅ Add this new action
+    setupWebSocket() {
+      const socketService = getSocketService();
+      socketService.subscribe('/user/queue/notifications', (notification) => {
+        this.notifications.unshift(notification);
+        if (!notification.read) {
+          this.unreadCount++;
+        }
+        this.showBrowserNotification(notification);
+      });
+  }}
 });

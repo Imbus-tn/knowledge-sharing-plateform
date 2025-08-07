@@ -118,7 +118,7 @@ const router = createRouter({
       name: 'reported-posts',
       component: ReportPostPage,
       meta: { requiresAuth: true, requiredRole: 'ADMIN' }
-    }
+    },
   ]
 });
 

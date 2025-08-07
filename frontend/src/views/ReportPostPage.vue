@@ -53,10 +53,10 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { apiClient } from '@/api'
-import { useThemeStore } from '@/stores/theme'
+ import { apiClient } from '../api';
+import { useThemeStore } from '../stores/theme'
 import { AlertTriangle } from 'lucide-vue-next'
-import type { ReportedPost } from '@/types/post'
+import type { ReportedPost } from '../types/post'
 
 const themeStore = useThemeStore()
 const isDark = computed(() => themeStore.isDark)

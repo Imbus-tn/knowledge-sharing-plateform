@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { chatApi } from '../api/chat';
 import { getSocketService } from '../services/socket.service';
+import { useAuthStore } from '../stores/auth'; 
 
 import type {
   Chat,
@@ -13,6 +14,7 @@ import type {
 } from '../types/chat';
 
 const socketService = getSocketService();
+
 
 interface ChatState {
   chats: Chat[];
@@ -36,17 +38,24 @@ export const useChatStore = defineStore('chat', {
   }),
 
   actions: {
-    async fetchChats() {
-      this.chats = await chatApi.getAllChats();
-      this.calculateUnreadCount();
+   async fetchChats() {
+  const authStore = useAuthStore();
+  const userId = authStore.user?.id;
 
-      // Only initialize socket connection once
-      if (!this.socketsInitialized) {
-        socketService.connect();
-        this.setupSocketListeners();
-        this.socketsInitialized = true;
-      }
-    },
+  if (!userId) {
+    throw new Error("User not authenticated");
+  }
+
+  this.chats = await chatApi.getAllChats(userId);
+  this.calculateUnreadCount();
+
+  if (!this.socketsInitialized && authStore.accessToken) {
+   socketService.connect(() => {
+    this.setupSocketListeners(); // ✅ Ne s'exécute qu'après connexion réussie
+  });
+    this.socketsInitialized = true;
+  }
+},
 
     async fetchChat(chatId: number) {
       this.currentChat = await chatApi.getChatById(chatId);

@@ -146,7 +146,7 @@
   import { useThemeStore } from '../stores/theme';
   import { useRoute, useRouter } from 'vue-router';
   import { Bell, X } from 'lucide-vue-next';
-  
+ import { useAuthStore } from '../stores/auth';
   const router = useRouter();
   const route = useRoute ();
   const notificationStore = useNotificationStore();
@@ -216,11 +216,14 @@
     }
   }
   
-  onMounted(() => {
-    const userId = '2'; // Replace with real user ID from auth store
-    notificationStore.setCurrentUser(userId);
-    notificationStore.fetchNotifications();
-  });
+onMounted(() => {
+  const authStore = useAuthStore();
+  const notificationStore = useNotificationStore();
+
+  if (authStore.isAuthenticated) {
+    notificationStore.setupWebSocket();
+  }
+});
   
   onActivated(() => {
     if (router.currentRoute.value.path === '/notifications') {

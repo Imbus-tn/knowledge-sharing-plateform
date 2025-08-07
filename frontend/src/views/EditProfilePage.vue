@@ -494,7 +494,20 @@ const handleSubmit = async () => {
     if (formData.avatar) {
       await authStore.uploadAvatar(formData.avatar);
     }
+const updateProfile = async () => {
+  console.log("Update clicked", formData); // Debug
 
+  try {
+    // ✅ Remove .value
+    await authStore.updateProfile(formData);
+
+    // ✅ Show success
+    alert("Profile updated successfully!");
+  } catch (error: any) {
+    console.error("Update failed:", error);
+    alert("Failed to update profile: " + error.message);
+  }
+};
     router.push({ name: 'profile' });
   } catch (error: any) {
     if (error.response?.data) {

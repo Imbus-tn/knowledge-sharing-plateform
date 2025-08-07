@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { getSocketService } from '../services/socket.service';
-
+import { useAuthStore } from '../stores/auth'; // adjust path if needed
+import { apiClient } from '../api';
 import type {
   Chat,
   Message,
@@ -14,22 +15,19 @@ import type {
 const socketService = getSocketService();
 
 // Use a single base URL for both REST and WebSocket fallback
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL + '/api' || 'http://localhost:8080/api';
 
-export const apiClient = axios.create({
-  baseURL: API_BASE_URL,
-  withCredentials: true,
-  paramsSerializer: {
-    encode: (param) => param // Preserve case sensitivity for enums
-  }
-});
+
 
 export const chatApi = {
   // Chats
-  async getAllChats(): Promise<Chat[]> {
-    const response = await apiClient.get('/chats');
-    return response.data;
-  },
+async getAllChats(userId: number): Promise<Chat[]> {
+  const response = await apiClient.get('/chats', {
+    params: { userId }
+  });
+  return response.data;
+},
+
 
   async getChatById(chatId: number): Promise<Chat> {
     const response = await apiClient.get(`/chats/${chatId}`);

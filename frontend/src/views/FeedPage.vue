@@ -897,7 +897,7 @@ const toggleFavorite = async (post: Post) => {
 const handleCreatePost = async (data: {
   mode: "new-post" | "share-link";
   content: string;
-  imageUrl: string | null;
+  imageUrl: string | undefined;
   linkUrl: string;
   additionalNotes: string;
   tags: string[];

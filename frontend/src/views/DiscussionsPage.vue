@@ -96,6 +96,7 @@ const showDateSeparator = (message: Message, index: number) => {
           <!-- Search and Filters -->
           <div class="p-4 border-b border-slate-700 space-y-3">
             <!-- Search input -->
+             
           </div>
           
           <!-- Conversations List -->

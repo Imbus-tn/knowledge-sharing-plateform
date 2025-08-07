@@ -1,6 +1,8 @@
-import { Client } from '@stomp/stompjs';
+
 import { useAuthStore } from '../stores/auth';
 import SockJS from 'sockjs-client';
+import { Client } from '@stomp/stompjs';
+import type { Message } from '@stomp/stompjs'; 
 class SocketService {
   private client: Client | null = null;
   private subscriptions: Map<string, (payload: any) => void> = new Map();
@@ -16,46 +18,76 @@ class SocketService {
     };
   }
 
-  connect() {
-    if (this.client && this.client.active) return;
+ connect(onConnectedCallback?: () => void) {
+    const authStore = useAuthStore();
+    const token = authStore.accessToken;
 
-    // Create client only when connect() is called (after Pinia is ready)
-  this.client = new Client({
-  webSocketFactory: () => new SockJS(import.meta.env.VITE_WS_URL || 'http://localhost:8080/ws'),
-      connectHeaders: this.getAuthHeaders(), // call here, not before
-      debug: (str) => console.log('[WS]', str),
+    if (!token) {
+      console.warn("No access token available");
+      return;
+    }
+     //  Prevent duplicate activation
+  if (this.client?.active) {
+    console.log('[WS] Already connected or connecting');
+    return;
+  }
+    this.client = new Client({
+      //  Removed brokerURL: null
+      webSocketFactory: () => new SockJS('http://localhost:8080/ws'),
+      connectHeaders: {
+        Authorization: `Bearer ${token}`
+      },
+      debug: (str: string) => console.log('[WS] ' + str),
       reconnectDelay: 5000,
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
-      
       onConnect: () => {
-        this.subscriptions.forEach((callback, topic) => {
-          this.subscribe(topic, callback);
-        });
+        console.log('[WS] Connected');
+        this.resubscribe();
+        if (onConnectedCallback) onConnectedCallback();
       },
       onStompError: (frame) => {
-        console.error('WebSocket error:', frame.headers.message);
+        console.error('[WS] Error:', frame);
       }
     });
 
     this.client.activate();
   }
+  private resubscribe() {
+    const topics = Array.from(this.subscriptions.keys());
+    this.subscriptions.clear();
+    topics.forEach(topic => {
+      const callback = this.subscriptions.get(topic);
+      if (callback) {
+        this.subscribe(topic, callback);
+      }
+    });
+  }
 
   disconnect() {
     if (this.client && this.client.active) {
       this.client.deactivate();
+       this.client = null;
        this.subscriptions.clear();
     }
    
   }
 
-  subscribe(topic: string, callback: (payload: any) => void) {
+subscribe(topic: string, callback: (payload: any) => void) {
     if (!this.client) {
-      throw new Error('WebSocket client is not connected');
+      console.warn('WebSocket not connected. Storing subscription for later.');
+      this.subscriptions.set(topic, callback);
+      return;
     }
-    const sub = this.client.subscribe(topic, (message) => {
-      callback(JSON.parse(message.body));
-    });
+
+    const sub = this.client.subscribe(topic, (message: Message) => {
+      try {
+        callback(JSON.parse(message.body));
+      } catch (e) {
+        console.error('Failed to parse WebSocket message', message.body);
+      }
+    }); 
+
     this.subscriptions.set(topic, callback);
     return sub;
   }
@@ -66,8 +98,7 @@ class SocketService {
     }
     this.client.publish({
       destination,
-      body: JSON.stringify(body),
-      headers: this.getAuthHeaders()
+      body: JSON.stringify(body)
     });
   }
 }

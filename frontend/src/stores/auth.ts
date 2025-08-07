@@ -5,7 +5,7 @@ import type { AuthResponse } from '../types/auth';
 import { ref, onBeforeMount, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { UserRole } from '../types/UserRole';
-
+import{getSocketService} from '../services/socket.service'
 
 export const useAuthStore = defineStore('auth', () => {
   const router = useRouter();
@@ -55,8 +55,13 @@ export const useAuthStore = defineStore('auth', () => {
       apiClient.defaults.headers.common.Authorization = `Bearer ${data.accessToken}`;
 
       // fetch user data after successful login
-      await fetchUser();
-      scheduletokenRefresh();
+
+    await fetchUser();
+    scheduletokenRefresh();
+
+    // ✅ Connect WebSocket
+    const socketService = getSocketService();
+    socketService.connect(); // Now token is available
     }catch(error){
       throw error;
     }

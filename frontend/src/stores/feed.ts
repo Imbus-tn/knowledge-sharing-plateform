@@ -21,7 +21,9 @@ export const useFeedStore = defineStore('feed', () => {
   const fetchPosts = async (): Promise<void> => {
     try {
       loading.value = true;
-      const response = await apiClient.get('/content/posts');
+      const response = await apiClient.get('/content/posts', {
+  params: { page: 0, size: 10 }
+})
       let postData: Post[] = [];
 
       if (Array.isArray(response.data)) {
@@ -79,57 +81,50 @@ export const useFeedStore = defineStore('feed', () => {
     }
   };
 
-  const createPost = async (postData: {
-    content: string;
-    imageUrl: string | null;
-    linkUrl?: string;
-    additionalNotes?: string;
-    tags: string[];
-  }) => {
-    try {
-      loading.value = true;
-      const response = await apiClient.post('/content/posts', {
-        content: postData.content,
-        imageUrl: postData.imageUrl,
-        tags: postData.tags,
-      });
+const createPost = async (postData: {
+  content: string;
+  imageUrl?: string;
+  tags: string[];
+}): Promise<void> => {
+  try {
+    loading.value = true;
 
-      const backendPost = response.data;
+    const response = await apiClient.post('/content/posts', postData);
+    const backendPost = response.data;
 
-      const newPost: Post = {
-        id: backendPost.id, // Keep as number
-        content: backendPost.content || postData.content,
-        imageUrl: backendPost.imageUrl || postData.imageUrl || undefined,
-        author: {
-          id: backendPost.author?.id ?? authStore.user?.id ?? 0,
-          name: backendPost.author?.name ?? authStore.user?.name ?? 'Anonymous',
-          email: backendPost.author?.email ?? authStore.user?.email ?? '',
-          role: authStore.user?.role || UserRole.USER,
-          avatarUrl: backendPost.author?.avatarUrl ?? authStore.user?.avatarUrl,
-          initials: backendPost.author?.initials ?? authStore.user?.initials,
-        },
-        createdAt: backendPost.createdAt || new Date().toISOString(),
-        reactions: backendPost.reactions || [],
-        favorites: backendPost.favorites || [],
-        comments: backendPost.comments || [],
-        shares: backendPost.shares || [],
-        tags: backendPost.tags || postData.tags || [],
-      };
+    const newPost: Post = {
+      id: backendPost.id, // ✅ Number (not String!)
+      content: backendPost.content || postData.content,
+      imageUrl: backendPost.imageUrl || postData.imageUrl || undefined, // ✅ undefined
+      author: {
+        id: backendPost.author?.id ?? authStore.user?.id ?? 0,
+        name: backendPost.author?.name ?? authStore.user?.name ?? 'Anonymous',
+        email: backendPost.author?.email ?? authStore.user?.email ?? '',
+        role: backendPost.author?.role ?? UserRole.USER,
+        avatarUrl: backendPost.author?.avatarUrl ?? authStore.user?.avatarUrl,
+        initials: backendPost.author?.initials ?? authStore.user?.initials,
+      },
+      createdAt: backendPost.createdAt || new Date().toISOString(),
+      reactions: backendPost.reactions || [],
+      favorites: backendPost.favorites || [],
+      comments: backendPost.comments || [],
+      shares: backendPost.shares || [],
+      tags: backendPost.tags || postData.tags || [],
+    };
 
-      if (newPost.id && newPost.content) {
-        posts.value.unshift(newPost);
-      } else {
-        throw new Error('Incomplete post data from server');
-      }
-    } catch (err: any) {
-      error.value = err.message || 'Failed to create post.';
-      console.error('Failed to create post:', err);
-      throw err;
-    } finally {
-      loading.value = false;
+    if (!newPost.id) {
+      throw new Error('Post has no ID');
     }
-  };
 
+    posts.value.unshift(newPost);
+  } catch (err: any) {
+    error.value = err.message || 'Failed to create post.';
+    console.error('Error creating post:', err);
+    throw err;
+  } finally {
+    loading.value = false;
+  }
+};
   const updatePost = async (postId: number, content: string, imageUrl?: string): Promise<void> => {
     try {
       loading.value = true;
