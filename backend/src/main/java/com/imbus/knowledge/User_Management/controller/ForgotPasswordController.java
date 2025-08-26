@@ -28,7 +28,7 @@ public class ForgotPasswordController {
     private  final EmailService emailService;
     private final ForgotPasswordRepository forgotPasswordRepository;
     private final PasswordEncoder passwordEncoder;
-    private static final Logger logger = LoggerFactory.getLogger(ForgotPasswordController.class);
+    public static final Logger logger = LoggerFactory.getLogger(ForgotPasswordController.class);
 
     public ForgotPasswordController(UserRepository userRepository, EmailService emailService, ForgotPasswordRepository forgotPasswordRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;

@@ -2,6 +2,7 @@ import axios from 'axios';
 import { getSocketService } from '../services/socket.service';
 import { useAuthStore } from '../stores/auth'; // adjust path if needed
 import { apiClient } from '../api';
+import type { User } from '../types/user';
 import type {
   Chat,
   Message,
@@ -22,9 +23,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL + '/api' || 'http://localhost:
 export const chatApi = {
   // Chats
 async getAllChats(userId: number): Promise<Chat[]> {
-  const response = await apiClient.get('/chats', {
-    params: { userId }
-  });
+  const response = await apiClient.get('/chats', { params: { userId } });
   return response.data;
 },
 
@@ -34,11 +33,23 @@ async getAllChats(userId: number): Promise<Chat[]> {
     return response.data;
   },
 
-  async createGroupChat(request: CreateChatRequest): Promise<Chat> {
-    const response = await apiClient.post('/chats/group', request);
+
+//  Create 1:1 chat
+ // src/api/chat.ts
+async createChat(participantIds: number[]): Promise<Chat> {
+  const authStore = useAuthStore();
+  const response = await apiClient.post('/chats', {
+    participantIds,
+    creatorId: authStore.user?.id
+  });
+  return response.data;
+},
+
+  //  Create group chat
+   async createGroupChat(name: string, participantIds: number[]): Promise<Chat> {
+    const response = await apiClient.post('/chats/group', { name, participantIds });
     return response.data;
   },
-
   async deleteChat(chatId: number): Promise<void> {
     await apiClient.delete(`/chats/${chatId}`);
   },

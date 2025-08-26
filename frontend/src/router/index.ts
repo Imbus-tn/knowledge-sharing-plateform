@@ -17,7 +17,7 @@ import InviteUserPage from '../views/InviteUserPage.vue';
 import NotificationsPage from '../views/NotificationsPage.vue';
 import { useAuthStore } from '../stores/auth';
 import ReportPostPage from '../views/ReportPostPage.vue';
-
+import PostDetailPage from '../views/PostDetailPage.vue';
 const router = createRouter({
   history: createWebHistory(),
   routes: [
@@ -113,6 +113,11 @@ const router = createRouter({
         component: InviteUserPage,
         meta: { requiresAuth: true }
       },
+  {
+    path: '/feed/:id',
+    name: 'PostDetail',
+    component: PostDetailPage // ✅ Must point to real component
+  },
       {
       path: '/reported-posts',
       name: 'reported-posts',

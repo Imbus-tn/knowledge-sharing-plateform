@@ -10,4 +10,6 @@ public class UserInfoDto {
     private String name;
     private String avatarUrl;
     private boolean online;
+    private String email;
+    private String lastSeen;
 }

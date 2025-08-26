@@ -5,13 +5,13 @@ import { apiClient } from '../api';
 import { useAuthStore } from './auth';
 import type { Post } from '../types/post';
 import { UserRole } from '../types/UserRole';
-
 export const useFeedStore = defineStore('feed', () => {
   const authStore = useAuthStore();
   const posts = ref<Post[]>([]);
   const loading = ref<boolean>(false);
   const error = ref<string | null>(null);
 
+const recommendedPosts = ref<Post[]>([]);
   const getPostById = computed(() => {
     return (postId: number) => {
       return posts.value.find((post: Post) => post.id === postId);
@@ -19,71 +19,62 @@ export const useFeedStore = defineStore('feed', () => {
   });
 
   const fetchPosts = async (): Promise<void> => {
-    try {
-      loading.value = true;
-      const response = await apiClient.get('/content/posts', {
-  params: { page: 0, size: 10 }
-})
-      let postData: Post[] = [];
+  try {
+    loading.value = true;
+    const response = await apiClient.get('/content/posts', {
+      params: { page: 0, size: 10 }
+    });
 
-      if (Array.isArray(response.data)) {
-        postData = response.data.map((post: any) => ({
-          ...post,
-          id: post.id, // Keep as number
-          reactions: post.reactions || [],
-          favorites: post.favorites || [],
-          comments: post.comments || [],
-          shares: post.shares || [],
-          author: {
-            id: post.authorId ?? 0,
-            name: post.authorName ?? 'Anonymous',
-            email: post.authorEmail ?? '',
-            role: post.authorRole ?? UserRole.USER,
-            avatarUrl: post.authorAvatarUrl,
-            initials: post.authorInitials,
-          },
-        }));
-      } else if (response.data && Array.isArray(response.data.content)) {
-        postData = response.data.content.map((post: any) => ({
-          id: post.id, // Keep as number
-          content: post.content || '',
-          imageUrl: post.imageUrl || undefined,
-          author: {
-            id: post.author.id ?? 0,
-            name: post.author.name ?? 'Anonymous',
-            email: post.author.email ?? '',
-            role: post.author.role ?? UserRole.USER,
-            avatarUrl: post.author.avatarUrl,
-            initials: post.author.initials,
-          },
-          createdAt: post.createdAt || new Date().toISOString(),
-          reactions: post.reactions || [],
-          favorites: post.favorites || [],
-          comments: post.comments || [],
-          shares: post.shares || [],
-        }));
-      } else {
-        postData = [];
-      }
+    let postData: Post[] = [];
 
-      postData.sort((a: Post, b: Post) => {
-        const dateA = new Date(a.createdAt).getTime();
-        const dateB = new Date(b.createdAt).getTime();
-        return dateB - dateA;
-      });
-
-      posts.value = postData;
-    } catch (err: any) {
-      error.value = err.message || 'Failed to load posts';
-      console.error('Error fetching posts:', err);
-    } finally {
-      loading.value = false;
+    if (Array.isArray(response.data)) {
+      // Direct array (rare)
+      postData = response.data;
+    } else if (response.data && Array.isArray(response.data.content)) {
+      // Paginated (common)
+      postData = response.data.content;
+    } else {
+      postData = [];
     }
-  };
+
+    // ✅ Map to Post interface — make sure ALL fields are included
+    posts.value = postData.map((post: any) => ({
+      id: post.id,
+      content: post.content || '',
+      imageUrl: post.imageUrl || undefined,
+      title: post.title || undefined,
+      description: post.description || undefined,
+      category: post.category || undefined,
+      viewCount: typeof post.viewCount === 'number' ? post.viewCount : 0,
+      likeCount: typeof post.likeCount === 'number' ? post.likeCount : 0,
+      shareCount: typeof post.shareCount === 'number' ? post.shareCount : 0,
+      author: {
+        id: post.author?.id ?? 0,
+        name: post.author?.name ?? 'Unknown',
+        email: post.author?.email ?? '',
+        role: post.author?.role ?? UserRole.USER,
+        avatarUrl: post.author?.avatarUrl ?? undefined,
+        initials: post.author?.initials ?? ''
+      },
+      createdAt: post.createdAt,
+      reactions: Array.isArray(post.reactions) ? post.reactions : [],
+      favorites: Array.isArray(post.favorites) ? post.favorites : [],
+      comments: Array.isArray(post.comments) ? post.comments : [],
+      shares: Array.isArray(post.shares) ? post.shares : [],
+      tags: Array.isArray(post.tags) ? post.tags : []
+    }));
+
+  } catch (err: any) {
+    error.value = err.message || 'Failed to load posts';
+    console.error('Error fetching posts:', err);
+  } finally {
+    loading.value = false;
+  }
+};
 
 const createPost = async (postData: {
   content: string;
-  imageUrl?: string;
+  imageUrl: string | null;
   tags: string[];
 }): Promise<void> => {
   try {
@@ -92,17 +83,27 @@ const createPost = async (postData: {
     const response = await apiClient.post('/content/posts', postData);
     const backendPost = response.data;
 
+    // Normalize imageUrl: convert null → undefined
+    const normalizedImageUrl = backendPost.imageUrl ?? postData.imageUrl ?? undefined;
+
     const newPost: Post = {
-      id: backendPost.id, // ✅ Number (not String!)
+      id: backendPost.id,
       content: backendPost.content || postData.content,
-      imageUrl: backendPost.imageUrl || postData.imageUrl || undefined, // ✅ undefined
+      imageUrl: normalizedImageUrl,
+      title: backendPost.title || undefined,
+      description: backendPost.description || undefined,
+      category: backendPost.category || undefined,
+      // ✅ Add missing required fields
+      viewCount: backendPost.viewCount ?? 0,
+      likeCount: backendPost.likeCount ?? 0,
+      shareCount: backendPost.shareCount ?? 0,
       author: {
         id: backendPost.author?.id ?? authStore.user?.id ?? 0,
         name: backendPost.author?.name ?? authStore.user?.name ?? 'Anonymous',
         email: backendPost.author?.email ?? authStore.user?.email ?? '',
         role: backendPost.author?.role ?? UserRole.USER,
-        avatarUrl: backendPost.author?.avatarUrl ?? authStore.user?.avatarUrl,
-        initials: backendPost.author?.initials ?? authStore.user?.initials,
+        avatarUrl: backendPost.author?.avatarUrl ?? authStore.user?.avatarUrl ?? undefined,
+        initials: backendPost.author?.initials ?? authStore.user?.initials ?? undefined,
       },
       createdAt: backendPost.createdAt || new Date().toISOString(),
       reactions: backendPost.reactions || [],
@@ -110,6 +111,7 @@ const createPost = async (postData: {
       comments: backendPost.comments || [],
       shares: backendPost.shares || [],
       tags: backendPost.tags || postData.tags || [],
+      isFavorite: false
     };
 
     if (!newPost.id) {
@@ -117,6 +119,7 @@ const createPost = async (postData: {
     }
 
     posts.value.unshift(newPost);
+
   } catch (err: any) {
     error.value = err.message || 'Failed to create post.';
     console.error('Error creating post:', err);
@@ -212,8 +215,51 @@ const createPost = async (postData: {
       loading.value = false;
     }
   };
-  // Add these actions to your store
 
+
+const fetchRecommendedPosts = async (): Promise<void> => {
+  try {
+    loading.value = true;
+    const response = await apiClient.get('/recommend/feed');
+
+    if (Array.isArray(response.data?.recommendations)) {
+      recommendedPosts.value = response.data.recommendations.map((rec: any) => ({
+        id: rec.content_id || rec.id, // ✅ Map content_id → id
+        title: rec.title || '',
+        description: rec.description || '',
+        content: rec.content || '',
+        imageUrl: rec.image_url || undefined,
+        category: rec.category || undefined,
+        viewCount: typeof rec.view_count === 'number' ? rec.view_count : 0,
+        likeCount: typeof rec.like_count === 'number' ? rec.like_count : 0,
+        shareCount: typeof rec.share_count === 'number' ? rec.share_count : 0,
+        author: {
+          id: rec.author?.id ?? 0,
+          name: rec.author?.name ?? 'Unknown',
+          email: rec.author?.email ?? '',
+          role: rec.author?.role ?? UserRole.USER,
+          avatarUrl: rec.author?.avatarUrl ?? undefined,
+          initials: rec.author?.name?.charAt(0).toUpperCase() ?? 'A'
+        },
+        createdAt: rec.createdAt || new Date().toISOString(),
+        reactions: Array.isArray(rec.reactions) ? rec.reactions : [],
+        favorites: Array.isArray(rec.favorites) ? rec.favorites : [],
+        comments: Array.isArray(rec.comments) ? rec.comments : [],
+        shares: Array.isArray(rec.shares) ? rec.shares : [],
+        tags: Array.isArray(rec.tags) ? rec.tags : [],
+        isFavorite: Boolean(rec.isFavorite)
+      }));
+    } else {
+      recommendedPosts.value = [];
+    }
+  } catch (err: any) {
+    error.value = err.message || 'Failed to load recommended posts';
+    console.error('Error fetching recommended posts:', err);
+    recommendedPosts.value = [];
+  } finally {
+    loading.value = false;
+  }
+};
 const reportPost = async (postId: number, reportData: { reason: string }): Promise<void> => {
   try {
     loading.value = true
@@ -242,19 +288,21 @@ const sharePost = async (postId: number): Promise<void> => {
   }
 };
 
-  return {
-    posts,
-    loading,
-    error,
-    getPostById,
-    fetchPosts,
-    createPost,
-    updatePost,
-    deletePost,
-    toggleFavorite,
-    reactToPost,
-    addComment,
-     reportPost,   // ✅ Add this
-      sharePost
-  };
+return {
+  posts,
+  recommendedPosts, // ✅ Must be here
+  loading,
+  error,
+  getPostById,
+  fetchPosts,
+  createPost,
+  updatePost,
+  deletePost,
+  toggleFavorite,
+  reactToPost,
+  addComment,
+  reportPost,
+  sharePost,
+  fetchRecommendedPosts
+};
 });

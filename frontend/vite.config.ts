@@ -37,5 +37,34 @@ export default defineConfig({
       tty: 'rollup-plugin-node-polyfills/polyfills/tty',
       domain: 'rollup-plugin-node-polyfills/polyfills/domain'
     }
+  },
+  // vite.config.ts
+server: {
+  port: 5173,
+  proxy: {
+    '/api': {
+      target: 'http://localhost:8080',
+      changeOrigin: true,
+      secure: false
+    },
+    // Forward /recommend/search → content_recommender (5000)
+    '/recommend/search': {
+      target: 'http://localhost:5000',
+      changeOrigin: true,
+      secure: false
+    },
+    // Forward /recommend/feed → feed_recommender (5001)
+    '/recommend/feed': {
+      target: 'http://localhost:5001',
+      changeOrigin: true,
+      secure: false
+    },
+    // Optional: forward /recommend/health to both
+    '/recommend/health': {
+      target: 'http://localhost:5000',
+      changeOrigin: true,
+      secure: false
+    }
   }
+}
 })

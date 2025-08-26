@@ -29,8 +29,8 @@ public class ReportedPostService {
 
     @Transactional
     public ReportedPost reportPost(Post post, User reporter, String reason) {
-        if (reportedPostRepository.findByPostId(post.getId()).isPresent()) {
-            throw new RuntimeException("Post already reported");
+        if (reportedPostRepository.findByPostIdAndReporterId(post.getId(), reporter.getId()).isPresent()) {
+            throw new RuntimeException("You have already reported this post");
         }
 
         ReportedPost report = new ReportedPost();

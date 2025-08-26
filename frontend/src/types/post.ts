@@ -21,6 +21,10 @@ export interface Post {
   favorites: Favorite[];
   comments: Comment[];
   shares: Share[];
+    category?: string;
+  viewCount: number;
+  likeCount: number;
+  shareCount: number;
 }
 
 // Simplified Author interface for API responses

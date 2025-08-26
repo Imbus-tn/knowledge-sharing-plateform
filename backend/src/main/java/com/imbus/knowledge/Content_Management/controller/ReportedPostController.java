@@ -21,7 +21,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/content/posts")
+@RequestMapping("/api/content/reports")
 @RequiredArgsConstructor
 public class ReportedPostController {
 
@@ -29,10 +29,7 @@ public class ReportedPostController {
     private final PostService postService;
     private final EmailService emailService;
 
-    /**
-     * POST /api/content/posts/{postId}/report
-     * Report a post with a reason
-     */
+
     @PostMapping("/{postId}/report")
     public ResponseEntity<ReportedPost> reportPost(
             @PathVariable Long postId,

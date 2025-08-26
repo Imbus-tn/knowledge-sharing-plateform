@@ -13,6 +13,7 @@ import com.imbus.knowledge.User_Management.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,7 +41,8 @@ public class PostService {
     }
 
     public Page<Post> getAllPosts(int page, int size) {
-        return postRepository.findAll(PageRequest.of(page, size));
+        Pageable pageable = PageRequest.of(page, size);
+        return postRepository.findAll(pageable);
     }
 
     public Post updatePost(Long postId, CreatePostRequest request, Long userId) {
@@ -99,21 +101,23 @@ public class PostService {
         Post post = getPostById(postId);
         User user = getUserById(userId);
 
-        PostReaction existingPostReaction = reactionRepository.findByUserAndPost(user, post);
+        PostReaction existing = reactionRepository.findByUserAndPost(user, post);
 
-        if (existingPostReaction != null) {
-            existingPostReaction.setEmoji(request.getType());
-            reactionRepository.save(existingPostReaction);
-        } else {
-            PostReaction newPostReaction = new PostReaction();
-            newPostReaction.setUser(user);
-            newPostReaction.setPost(post);
-            newPostReaction.setEmoji(request.getType());
-            newPostReaction.setCreatedAt(LocalDateTime.now());
-            reactionRepository.save(newPostReaction);
+        if (request.getType() != null && existing == null) {
+            // New like
+            post.setLikeCount(post.getLikeCount() + 1);
+            PostReaction reaction = new PostReaction();
+            reaction.setUser(user);
+            reaction.setPost(post);
+            reaction.setEmoji(request.getType());
+            reaction.setCreatedAt(LocalDateTime.now());
+            reactionRepository.save(reaction);
+        } else if (request.getType() == null && existing != null) {
+            // Remove like
+            post.setLikeCount(Math.max(0, post.getLikeCount() - 1));
+            reactionRepository.delete(existing);
         }
-
-
+        postRepository.save(post);
     }
 
     public void addCommentToPost(Long postId, CommentRequest request, Long userId) {
@@ -190,8 +194,11 @@ public class PostService {
         share.setPost(post);
         share.setUser(user);
         share.setSharedAt(LocalDateTime.now());
-
         shareRepository.save(share);
+
+        // Increment share count
+        post.setShareCount(post.getShareCount() + 1);
+        postRepository.save(post);
     }
     public Post createPost(CreatePostRequest request, Long userId) {
         User author = getUserById(userId);
@@ -212,7 +219,10 @@ public class PostService {
 
         return postRepository.save(post);
     }
-
+    @Transactional
+    public void incrementViewCount(Long postId) {
+        postRepository.incrementViewCount(postId);
+    }
     // ===== HELPERS =====
 
     private User getUserById(Long userId) {

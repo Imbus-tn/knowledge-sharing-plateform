@@ -1,13 +1,20 @@
 package com.imbus.knowledge.chat.controller;
 
+import com.imbus.knowledge.User_Management.entities.User;
+import com.imbus.knowledge.User_Management.repositories.UserRepository;
+import com.imbus.knowledge.User_Management.security.UserDetailsImpl;
 import com.imbus.knowledge.chat.dto.ChatDto;
+import com.imbus.knowledge.chat.dto.CreateChatRequest;
+import com.imbus.knowledge.chat.dto.UserInfoDto;
 import com.imbus.knowledge.chat.services.ChatService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/chats")
@@ -25,11 +32,24 @@ public class ChatController {
         return ResponseEntity.ok(chatService.getChatById(id, userId));
     }
 
+
     @PostMapping
-    public ResponseEntity<ChatDto> createChat(
-            @RequestParam Set<Long> participantIds,
-            @RequestParam(required = false) String chatName,
-            @RequestParam Long creatorId) {
-        return ResponseEntity.ok(chatService.createChat(participantIds, chatName, creatorId));
+    public ResponseEntity<ChatDto> createChat(@RequestBody CreateChatRequest request,
+                                              @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        Long userId = userDetails.getUser().getId();
+        ChatDto chat = chatService.createChat(request.getParticipantIds(), false, null, userId);
+        return ResponseEntity.ok(chat);
     }
+
+    @PostMapping("/group")
+    public ResponseEntity<ChatDto> createGroupChat(@RequestBody CreateChatRequest request,
+                                                   @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        if (request.getName() == null || request.getName().trim().isEmpty()) {
+            throw new IllegalArgumentException("Group name is required");
+        }
+        Long userId = userDetails.getUser().getId();
+        ChatDto chat = chatService.createChat(request.getParticipantIds(), true, request.getName(), userId);
+        return ResponseEntity.ok(chat);
+    }
+
 }

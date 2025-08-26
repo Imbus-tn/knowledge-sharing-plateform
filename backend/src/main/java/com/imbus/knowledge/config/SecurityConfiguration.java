@@ -1,6 +1,5 @@
 package com.imbus.knowledge.config;
 
-
 import com.imbus.knowledge.User_Management.services.AuthFilterService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -28,9 +27,8 @@ import java.util.List;
 @EnableMethodSecurity
 public class SecurityConfiguration implements WebMvcConfigurer {
 
-    private  final AuthFilterService authFilterService;
+    private final AuthFilterService authFilterService;
     private final AuthenticationProvider authenticationProvider;
-
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -39,50 +37,53 @@ public class SecurityConfiguration implements WebMvcConfigurer {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints
-                        .requestMatchers("api/auth/**", "api/forgotPassword/**").permitAll()
-                        // WebSocket endpoint must be public to allow handshake
-                        .requestMatchers("/ws/**").permitAll()
-                        // Allow access to static resources
+                        .requestMatchers("/api/auth/**", "/api/forgotPassword/**").permitAll()
+                        .requestMatchers("/ws", "/ws/**").permitAll()  // ✅ Allow WebSocket handshake
                         .requestMatchers("/uploads/**").permitAll()
+                        // ✅ Allow all authenticated users to access chat
+                        .requestMatchers("/api/chats", "/api/chats/**", "/api/messages", "/api/messages/**", "/api/reactions/**")
+                        .authenticated()
+                        // Public read access to posts
+                        .requestMatchers(HttpMethod.GET, "/api/content/posts").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/content/posts/**").permitAll()
 
-                        // Protected user endpoints (Require authentication)
+                        // User profile (authenticated)
                         .requestMatchers(HttpMethod.GET, "/api/users/{userId}/profile").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/users/{userId}/profile").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/users/{userId}/avatar").authenticated()
 
                         // Admin endpoints
-                        .requestMatchers("api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/admin/**", "/api/content/reports", "/api/users/**").hasRole("ADMIN")
 
-                        // Content Management Endpoints
-                        .requestMatchers("/api/content/posts").authenticated()
-                        .requestMatchers("/api/content/posts/**").authenticated()
+                        // Content Management (write only)
+                        .requestMatchers("/api/content/posts").authenticated()  // POST
+                        .requestMatchers("/api/content/posts/**").authenticated()  // PUT, DELETE
 
-                        // Image Upload Endpoint (ADD THIS LINE)
+                        // Image Upload
                         .requestMatchers("/api/upload/**").authenticated()
 
-                        // All other requests require authentication
-                        .anyRequest().authenticated())
 
+
+                        // All other requests require authentication
+                        .anyRequest().authenticated()
+                )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(authFilterService, UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
     }
 
-    // Add CORS configuration
-
     @Bean
-    public CorsConfigurationSource corsConfigurationSource(){
+    public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:5173")); // Allow your frontend origin
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedOrigins(List.of("http://localhost:5173")); // Frontend
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(true); // Required for cookies/authorization headers
-        config.setMaxAge(3600L); // Cache preflight response for 1 hour
-
-        // VERY IMPORTANT: expose websocket headers
-        config.setExposedHeaders(List.of("Authorization", "content-type"));
+        config.setAllowCredentials(true);
+        config.setMaxAge(3600L);
+        config.setExposedHeaders(List.of("Authorization", "content-type")); // ✅ Required for JWT
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
@@ -90,9 +91,8 @@ public class SecurityConfiguration implements WebMvcConfigurer {
     }
 
     @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry){
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations("file:uploads/");
     }
-
 }

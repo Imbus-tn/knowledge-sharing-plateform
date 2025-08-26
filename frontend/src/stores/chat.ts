@@ -1,8 +1,7 @@
 import { defineStore } from 'pinia';
 import { chatApi } from '../api/chat';
 import { getSocketService } from '../services/socket.service';
-import { useAuthStore } from '../stores/auth'; 
-
+import { useAuthStore } from '../stores/auth';
 import type {
   Chat,
   Message,
@@ -14,7 +13,6 @@ import type {
 } from '../types/chat';
 
 const socketService = getSocketService();
-
 
 interface ChatState {
   chats: Chat[];
@@ -38,25 +36,27 @@ export const useChatStore = defineStore('chat', {
   }),
 
   actions: {
-   async fetchChats() {
-  const authStore = useAuthStore();
-  const userId = authStore.user?.id;
+    // ✅ Fetch all chats for current user
+    async fetchChats() {
+      const authStore = useAuthStore();
+      const userId = authStore.user?.id;
 
-  if (!userId) {
-    throw new Error("User not authenticated");
-  }
+      if (!userId) {
+        throw new Error("User not authenticated");
+      }
 
-  this.chats = await chatApi.getAllChats(userId);
-  this.calculateUnreadCount();
+      this.chats = await chatApi.getAllChats(userId);
+      this.calculateUnreadCount();
 
-  if (!this.socketsInitialized && authStore.accessToken) {
-   socketService.connect(() => {
-    this.setupSocketListeners(); // ✅ Ne s'exécute qu'après connexion réussie
-  });
-    this.socketsInitialized = true;
-  }
-},
+      if (!this.socketsInitialized && authStore.accessToken) {
+        socketService.connect(() => {
+          this.setupSocketListeners(); // ✅ Only runs after successful connection
+        });
+        this.socketsInitialized = true;
+      }
+    },
 
+    // ✅ Fetch a specific chat by ID
     async fetchChat(chatId: number) {
       this.currentChat = await chatApi.getChatById(chatId);
       this.messages = await chatApi.getChatMessages(chatId);
@@ -64,12 +64,31 @@ export const useChatStore = defineStore('chat', {
       this.calculateUnreadCount();
     },
 
-    async createGroupChat(name: string, participantIds: number[]) {
-      const chat = await chatApi.createGroupChat({ name, participantIds });
-      this.chats.unshift(chat);
-      return chat;
+    // ✅ Create 1:1 chat
+    async createChat(participantIds: number[]) {
+      try {
+        const chat = await chatApi.createChat(participantIds);
+        this.chats.unshift(chat);
+        return chat;
+      } catch (error) {
+        console.error('Failed to create chat:', error);
+        throw error;
+      }
     },
 
+    // ✅ Create group chat
+    async createGroup(name: string, participantIds: number[]) {
+      try {
+        const chat = await chatApi.createGroupChat(name, participantIds);
+        this.chats.unshift(chat);
+        return chat;
+      } catch (error) {
+        console.error('Failed to create group:', error);
+        throw error;
+      }
+    },
+
+    // ✅ Delete a chat
     async deleteChat(chatId: number) {
       await chatApi.deleteChat(chatId);
       this.chats = this.chats.filter((c: Chat) => c.id !== chatId);
@@ -78,6 +97,7 @@ export const useChatStore = defineStore('chat', {
       }
     },
 
+    // ✅ Send a message
     async sendMessage(text: string, replyTo?: Message) {
       if (!this.currentChat) return;
 
@@ -89,6 +109,7 @@ export const useChatStore = defineStore('chat', {
       await chatApi.sendMessage(this.currentChat.id, request);
     },
 
+    // ✅ Send a file
     async sendFile(file: File) {
       if (!this.currentChat) return;
 
@@ -99,12 +120,14 @@ export const useChatStore = defineStore('chat', {
       });
     },
 
+    // ✅ Delete a message
     async deleteMessage(messageId: number) {
       if (!this.currentChat) return;
       await chatApi.deleteMessage(this.currentChat.id, messageId);
       this.messages = this.messages.filter((m: Message) => m.id !== messageId);
     },
 
+    // ✅ Toggle reaction on a message
     async toggleReaction(message: Message, emoji: string) {
       if (!this.currentChat) return;
 
@@ -116,6 +139,7 @@ export const useChatStore = defineStore('chat', {
       await chatApi.toggleReaction(this.currentChat.id, request);
     },
 
+    // ✅ Add a new message (from socket or local)
     addMessage(chatId: number, message: Omit<Message, 'id' | 'createdAt' | 'isRead'>) {
       const chat = this.chats.find((c: Chat) => c.id === chatId);
       if (!chat) return;
@@ -147,10 +171,12 @@ export const useChatStore = defineStore('chat', {
       }
     },
 
+    // ✅ Calculate total unread count
     calculateUnreadCount() {
       this.unreadCount = this.chats.reduce((sum, chat) => sum + chat.unreadCount, 0);
     },
 
+    // ✅ Mark chat as read
     markChatAsRead(chatId: number) {
       const chat = this.chats.find((c: Chat) => c.id === chatId);
       if (!chat) return;
@@ -165,6 +191,7 @@ export const useChatStore = defineStore('chat', {
       this.calculateUnreadCount();
     },
 
+    // ✅ Setup WebSocket listeners
     setupSocketListeners() {
       socketService.subscribe('/topic/new-message', (incoming: any) => {
         const message: Omit<Message, 'id' | 'createdAt' | 'isRead'> = {

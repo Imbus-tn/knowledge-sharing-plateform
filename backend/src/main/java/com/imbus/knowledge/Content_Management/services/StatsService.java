@@ -21,7 +21,7 @@ public class StatsService {
     private final ShareRepository shareRepository;
 
     public UserStats getUserStats(Long userId) {
-        List<Post> userPosts = postRepository.findByAuthorId(userId);
+        List<Post> userPosts = postRepository.findByAuthor_Id(userId);
 
         int articlesPublished = userPosts.size();
         int totalViews = userPosts.stream().mapToInt(Post::getViewCount).sum();

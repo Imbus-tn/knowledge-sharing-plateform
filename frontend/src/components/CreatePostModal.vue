@@ -126,10 +126,10 @@
 <script setup lang="ts">
 import { ref, defineEmits } from 'vue';
 import { apiClient } from '../api';
-
+import { useFeedStore } from '../stores/feed';
 // Props & Emits
 const emit = defineEmits(['close', 'submit']);
-
+const feedStore = useFeedStore();
 // Form state
 const mode = ref<'new-post' | 'share-link'>('new-post');
 const content = ref('');
@@ -140,6 +140,28 @@ const tags = ref<string[]>([]);
 const uploadedImage = ref<string | null>(null);
 const linkPreview = ref<any>(null);
 
+const handleCreatePost = async (data: {
+  content: string;
+  imageFile?: File;
+  tags: string[];
+}) => {
+  let imageUrl: string | null = null;
+
+  if (data.imageFile) {
+    const formData = new FormData();
+    formData.append('file', data.imageFile);
+    const response = await apiClient.post('/content/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    imageUrl = response.data.imageUrl; // e.g., "/content/images/abc.jpg"
+  }
+
+  await feedStore.createPost({
+    content: data.content,
+    imageUrl: imageUrl,
+    tags: data.tags
+  });
+};
 // Add tag
 const addTag = () => {
   const value = tagInput.value.trim();
@@ -185,23 +207,56 @@ const fetchLinkPreview = async () => {
 };
 
 // Submit handler
-const handleSubmit = () => {
-  emit('submit', {
-    mode: mode.value,
-    content: content.value,
-    imageUrl: uploadedImage.value,
-    linkUrl: linkUrl.value,
-    additionalNotes: additionalNotes.value,
-    tags: tags.value
-  });
+const handleSubmit = async () => {
+  try {
+    let imageUrl: string | null = null;
 
-  // Reset form
-  content.value = '';
-  linkUrl.value = '';
-  additionalNotes.value = '';
-  tags.value = [];
-  uploadedImage.value = null;
-  linkPreview.value = null;
-  tagInput.value = '';
+    // ✅ Upload image if exists
+    if (uploadedImage.value && uploadedImage.value.startsWith('data:')) {
+      const blob = await fetch(uploadedImage.value).then(r => r.blob());
+      const formData = new FormData();
+      formData.append('file', blob, 'upload.jpg');
+
+      const response = await apiClient.post('/api/content/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      imageUrl = response.data.imageUrl; // e.g., "/content/images/abc.jpg"
+    }
+
+    // ✅ Create post via store
+    if (mode.value === 'new-post') {
+      await feedStore.createPost({
+        content: content.value,
+        imageUrl: imageUrl,
+        tags: tags.value
+      });
+    } else {
+      // For share-link mode, you might handle differently
+      // For now, just emit
+      emit('submit', {
+        mode: mode.value,
+        content: additionalNotes.value,
+        imageUrl: imageUrl,
+        linkUrl: linkUrl.value,
+        additionalNotes: additionalNotes.value,
+        tags: tags.value
+      });
+    }
+
+    // ✅ Reset form
+    content.value = '';
+    linkUrl.value = '';
+    additionalNotes.value = '';
+    tags.value = [];
+    uploadedImage.value = null;
+    linkPreview.value = null;
+    tagInput.value = '';
+
+    // ✅ Close modal
+    emit('close');
+  } catch (err: any) {
+    console.error('Error creating post:', err);
+    alert('Failed to create post: ' + err.message);
+  }
 };
 </script>

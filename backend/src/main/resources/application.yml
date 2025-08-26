@@ -34,10 +34,15 @@ spring:
 
   data:
     web:
+      static-locations: classpath:/static/,file:./uploads/
       pageable:
         one-indexed-parameters: true
         default-page-size: 20
-
+recommender:
+  content:
+    url: http://localhost:5000
+  feed:
+    url: http://localhost:5001
 # Custom app properties
 app:
 

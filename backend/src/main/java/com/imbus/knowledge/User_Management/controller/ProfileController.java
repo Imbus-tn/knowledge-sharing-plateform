@@ -27,7 +27,7 @@ public class ProfileController {
             @AuthenticationPrincipal UserDetailsImpl userDetails
             ) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         return ResponseEntity.ok(UserResponse.fromEntity(user));
     }

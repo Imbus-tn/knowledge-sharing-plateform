@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+# Exclude virtual environments
+venv/
+recommendation_flask/venv/
+
+.env/
+__pycache__/
+*.pyc

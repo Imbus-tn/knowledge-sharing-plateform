@@ -235,6 +235,31 @@
             </div>
           </div>
         </div>
+         <!-- Recommended for You -->
+ <div v-if="feedStore.recommendedPosts.length > 0" class="mb-8">
+  <h2 class="text-2xl font-bold text-white mb-4">Recommended for You</h2>
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div
+      v-for="post in feedStore.recommendedPosts"
+      :key="post.id"
+      class="bg-slate-800/50 p-4 rounded-xl hover:bg-slate-700/50 transition cursor-pointer"
+      @click="$router.push(`/feed/${post.id}`)"
+    >
+      <!-- Check if title and author exist -->
+      <div v-if="post.title && post.author?.name">
+        <h3 class="text-white font-semibold">{{ post.title }}</h3>
+        <p class="text-slate-400 text-sm mt-1 line-clamp-2">{{ post.description }}</p>
+        <div class="flex justify-between items-center mt-2 text-xs text-slate-500">
+          <span>{{ post.author.name }}</span>
+          <span>
+            {{ formatDate(post.createdAt) }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
         <!-- Posts Feed -->
         <div v-if="!feedStore.loading && posts.length === 0" 
           :class="[
@@ -605,7 +630,7 @@
 </template>
 
 <script setup lang="ts">
-
+import { useRouter } from 'vue-router';
 import { ref, computed, onMounted, onUnmounted, onActivated } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { useThemeStore } from '../stores/theme';
@@ -622,8 +647,10 @@ import type { Post } from '../types/post';
 import type { Reaction } from '../types/reaction';
 import { UserRole } from '../types/UserRole';
 import { HeartIcon, FlagIcon, ShareIcon, TrashIcon } from '@heroicons/vue/24/outline';
-const authStore = useAuthStore();
+const router = useRouter();
 const feedStore = useFeedStore();
+const authStore = useAuthStore();
+
 const themeStore = useThemeStore();
 const user = computed(() => authStore.user);
 const notificationStore = useNotificationStore();
@@ -632,7 +659,17 @@ const activePostMenu = ref<number | null>(null);
 const posts = computed(() => feedStore.posts);
 const isDark = computed(() => themeStore.isDark);
 const reactionPickerPosition = ref({ top: '0px', left: '0px' });
-
+const formatDate = (dateString: string): string => {
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      return 'Invalid Date';
+    }
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  } catch (e) {
+    return 'Invalid Date';
+  }
+};
 const avatarUrl = computed(() => {
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
   return user.value?.avatarUrl
@@ -903,11 +940,15 @@ const handleCreatePost = async (data: {
   tags: string[];
 }) => {
   try {
+    //  Convert undefined → null
+    const imageUrl: string | null = data.imageUrl ?? null;
+
     await feedStore.createPost({
       content: data.content,
-      imageUrl: data.imageUrl,
+      imageUrl,     //  Now string | null
       tags: data.tags
     });
+
     notificationStore.addNotification({
       type: 'system',
       message: 'Post created successfully',
@@ -953,9 +994,13 @@ const fetchPostsIfNeeded = () => {
   }
 };
 
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside);
-  fetchPostsIfNeeded();
+onMounted(async () => {
+  try {
+    await feedStore.fetchPosts();
+    await feedStore.fetchRecommendedPosts();
+  } catch (error) {
+    console.error('Failed to load feed:', error);
+  }
 });
 
 onUnmounted(() => {

@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -17,11 +18,18 @@ public class PostResponse {
     private Long id;
     private String content;
     private String imageUrl;
+    private String title;        // ← Add
+    private String description;  // ← Add
+    private String category;     // ← Add
+    private List<String> tags;   // ← Add
     private AuthorDto author;
     private LocalDateTime createdAt;
     private long commentCount;
     private long reactionCount;
     private boolean isFavorite;
+    private int viewCount;
+    private int likeCount;
+    private int shareCount;
 
     // Static factory method
     public static PostResponse fromEntity(Post post, boolean isFavorite) {
@@ -29,6 +37,10 @@ public class PostResponse {
                 .id(post.getId())
                 .content(post.getContent())
                 .imageUrl(post.getImageUrl())
+                .title(post.getTitle())
+                .description(post.getDescription())
+                .category(post.getCategory())
+                .tags(post.getTags())
                 .author(AuthorDto.builder()
                         .name(post.getAuthor().getName())
                         .initials(post.getAuthor().getUsername().substring(0, 2))
@@ -37,7 +49,10 @@ public class PostResponse {
                 .createdAt(post.getCreatedAt())
                 .commentCount(post.getComments().size())
                 .reactionCount(post.getPostReactions().size())
+                .viewCount(post.getViewCount())
                 .isFavorite(isFavorite)
+                .likeCount(post.getLikeCount())     // ✅ Add
+                .shareCount(post.getShareCount())
                 .build();
     }
 
