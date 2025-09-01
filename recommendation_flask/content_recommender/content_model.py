@@ -98,7 +98,12 @@ class ContentRecommender:
     def find_best_match(self, title: str, threshold: float = 70) -> Optional[int]:
         """Find best matching title using fuzzy matching."""
         titles = self.content_df['title'].astype(str).tolist()
-        result = process.extractOne(title, titles, scorer=fuzz.token_set_ratio, score_cutoff=threshold)
+        title = title.lower().strip()
+            # Use token_set_ratio for multi-word queries
+        scorer = fuzz.token_set_ratio
+        threshold = 50 if len(title.split()) <= 2 else 70
+        
+        result = process.extractOne(title, titles, scorer=scorer, score_cutoff=threshold)
         if result:
             matched_title, score, idx = result
             logger.info(f"Fuzzy match found: '{title}' -> '{matched_title}' (score: {score})")
@@ -107,41 +112,38 @@ class ContentRecommender:
         
     def recommend_content(
         self,
-        content_title: str,
+        query: str,
         top_n: int = 5,
         similarity_weight: float = 0.7,
         popularity_weight: float = 0.3
     ) -> Union[pd.DataFrame, str]:
-        """Generate recommendations based on input title."""
+        """Generate recommendations even with typos in the title."""
         try:
-            # Validate input
-            if not content_title or not isinstance(content_title, str):
-                return pd.DataFrame({"Message": ["Please provide a valid content title"]})
-            content_title = content_title.strip().lower()
-            if not content_title:
-                return pd.DataFrame({"Message": ["Please provide a non-empty content title"]})
+            if not query or not isinstance(query, str):
+                return pd.DataFrame({"Message": ["Please provide a valid query"]})
+            query = query.strip()
+            if not query:
+                return pd.DataFrame({"Message": ["Please provide a non-empty query"]})
 
-            # Find potential matches
+            # Step 1: Try exact match first
             potential_matches = self.content_df[
-                self.content_df['title'].str.contains(content_title, case=False, na=False)
+                self.content_df['title'].str.contains(query, case=False, na=False)
             ]
-
             if len(potential_matches) == 0:
-                idx = self.find_best_match(content_title)
+                # Step 2: Fuzzy match if no exact match
+                idx = self.find_best_match(query)
                 if idx is None:
-                    return pd.DataFrame({
-                        "Message": [f"No content found matching '{content_title}'"]
-                    })
+                    return pd.DataFrame({"Message": [f"No content found matching '{query}'"]})
                 reference_idx = idx
             else:
                 reference_idx = potential_matches.index[0]
 
-            # Get reference embedding
+            # Step 3: Get reference embedding for semantic search
             reference_features = self.content_df.loc[reference_idx, 'combined_features']
             query_embedding = self.model.encode([reference_features])
             faiss.normalize_L2(query_embedding)
 
-            # Search similar items
+            # Step 4: Find similar items
             if self.use_faiss:
                 distances, indices = self.index.search(query_embedding, top_n + 1)
                 top_indices = [i for i in indices[0] if i != reference_idx][:top_n]
@@ -155,13 +157,12 @@ class ContentRecommender:
             recommendations = self.content_df.iloc[top_indices].copy()
             recommendations['similarity_score'] = similarity_scores
 
-            # Calculate popularity score
+            # Step 5: Apply popularity adjustment
             if all(m in recommendations.columns for m in self.popularity_weights):
                 recommendations['popularity_score'] = recommendations.apply(
                     lambda x: sum(
                         self.popularity_weights[metric] * x[metric]
-                        for metric in self.popularity_weights
-                        if metric in x
+                        for metric in self.popularity_weights if metric in x
                     ),
                     axis=1
                 )
@@ -174,13 +175,15 @@ class ContentRecommender:
                 sort_column = 'similarity_score'
 
             result_cols = ['id', 'title', 'description', 'category', sort_column]
-            if 'url' in self.content_df.columns:
+            if 'image_url' in self.content_df.columns:
                 result_cols.append('image_url')
 
             return recommendations.sort_values(sort_column, ascending=False)[result_cols].rename(columns={sort_column: 'score'})
+
         except Exception as e:
             logger.error(f"Error in recommendation: {str(e)}")
             return f"Error generating recommendations: {str(e)}"
+
 
     def recommend_as_dict(self, content_title: str, top_n: int = 5,
                       similarity_weight: float = 0.7, popularity_weight: float = 0.3) -> dict:
@@ -206,7 +209,7 @@ class ContentRecommender:
 
         # Get recommendations based on matched title
         result = self.recommend_content(
-            content_title=matched_title,
+            query=matched_title,
             top_n=top_n,
             similarity_weight=similarity_weight,
             popularity_weight=popularity_weight

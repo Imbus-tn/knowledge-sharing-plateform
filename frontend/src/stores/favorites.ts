@@ -15,7 +15,7 @@ export const useFavoritesStore = defineStore('favorites', {
   this.loading = true;
   this.error = null;
   try {
-    const res = await axios.get('/api/content/posts/favorites');
+    const res = await axios.get('/content/favorites');
     this.items = res.data || []; // Use res.data directly
   } catch (err) {
     this.error = 'Failed to load favorites';
@@ -27,7 +27,7 @@ export const useFavoritesStore = defineStore('favorites', {
 
     async toggleFavorite(post: Partial<FavoriteItem>) {
       try {
-        await axios.post(`/api/content/posts/${post.id}/favorite`, {})
+        await axios.post(`/content/favorites/${post.id}`, {})
         await this.loadFavoritesFromAPI()
       } catch (err) {
         console.error('Failed to toggle favorite:', err)
@@ -37,7 +37,7 @@ export const useFavoritesStore = defineStore('favorites', {
 
     async removeFavorite(postId: number) {
       try {
-        await axios.delete(`/api/content/posts/${postId}/favorite`)
+        await axios.delete(`/content/posts/${postId}/favorite`)
         this.items = this.items.filter(item => item.id !== postId)
       } catch (err) {
         console.error('Failed to remove favorite:', err)

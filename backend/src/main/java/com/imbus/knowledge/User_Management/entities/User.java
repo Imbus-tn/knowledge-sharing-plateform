@@ -1,5 +1,6 @@
 package com.imbus.knowledge.User_Management.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
@@ -35,7 +36,8 @@ public class User implements UserDetails {
     private String github;
     private String linkedin;
     private String avatarUrl;
-
+    private String initials;
+    @JsonIgnore
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private RefreshToken refreshToken;
 
@@ -77,6 +79,21 @@ public class User implements UserDetails {
     public boolean isEnabled() {
         return true;
     }
-
+    @PrePersist
+    @PreUpdate
+    public void generateInitials() {
+        if (name != null && !name.trim().isEmpty()) {
+            String[] parts = name.trim().split("\\s+");
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < Math.min(parts.length, 2); i++) {
+                if (!parts[i].isEmpty()) {
+                    sb.append(Character.toUpperCase(parts[i].charAt(0)));
+                }
+            }
+            this.initials = sb.toString();
+        } else {
+            this.initials = "U";
+        }
+    }
 
 }

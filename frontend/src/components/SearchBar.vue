@@ -1,7 +1,7 @@
 <template>
-  <div class="relative max-w-2xl mx-auto group" ref="searchContainer">
+  <div class="relative max-w-2xl mx-auto group" ref="searchContainerRef">
     <!-- Search Input -->
-    <Search
+    <SearchIcon
       class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors cursor-pointer"
       @click="handleSearch"
     />
@@ -16,7 +16,7 @@
       @input="debouncedFetch"
     />
 
-    <!-- Recommendations Dropdown -->
+    <!-- Dropdown -->
     <div
       v-if="query && results.length > 0 && dropdownOpen"
       class="absolute top-full mt-2 w-full bg-slate-800/90 backdrop-blur-md border border-slate-700 rounded-xl shadow-2xl z-50 max-h-96 overflow-y-auto"
@@ -51,8 +51,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onBeforeUnmount } from 'vue';
-import { Search } from 'lucide-vue-next';
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
+import { Search as SearchIcon } from 'lucide-vue-next';
 import { useRouter } from 'vue-router';
 
 const query = ref('');
@@ -60,12 +60,14 @@ const results = ref<any[]>([]);
 const loading = ref(false);
 const dropdownOpen = ref(false);
 const selectedIndex = ref(-1);
-
 const router = useRouter();
-const searchContainer = ref<HTMLElement | null>(null);
+const searchContainerRef = ref<HTMLElement | null>(null);
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
-// Immediate search
+// Fetch results from recommendation API
 const fetchResults = async () => {
+  console.log('🔍 Searching for:', query.value);
+
   const trimmed = query.value.trim();
   if (!trimmed) {
     results.value = [];
@@ -78,45 +80,55 @@ const fetchResults = async () => {
   dropdownOpen.value = true;
 
   try {
-    const response = await fetch(`/api/recommend?title=${encodeURIComponent(trimmed)}&top_n=5`);
+    const response = await fetch(
+      `${API_BASE}/api/recommend/search?title=${encodeURIComponent(trimmed)}&top_n=5`
+    );
+
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
-    if (data.recommendations) results.value = data.recommendations;
-    else results.value = [];
-    selectedIndex.value = -1; // reset selection
+
+    // Handle array or object with recommendations
+    results.value = Array.isArray(data)
+      ? data
+      : (data.recommendations || []);
+    selectedIndex.value = -1;
   } catch (error) {
-    console.error('Search failed:', error);
+    console.error('❌ Search failed:', error);
     results.value = [];
   } finally {
     loading.value = false;
   }
 };
 
+// ✅ Add this missing method
+const handleSearch = () => {
+  fetchResults();
+};
+
 // Debounce
-const debounce = <T extends (...args: any[]) => void>(fn: T, delay: number) => {
+const debounce = (fn: Function, delay: number) => {
   let timeoutId: ReturnType<typeof setTimeout>;
   return (...args: any[]) => {
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => fn(...args), delay);
   };
 };
+
 const debouncedFetch = debounce(fetchResults, 300);
 
-// Manual search trigger
-const handleSearch = () => fetchResults();
-
-// Keyboard navigation
-const moveSelection = (direction: number) => {
-  if (!results.value.length) return;
-  selectedIndex.value = (selectedIndex.value + direction + results.value.length) % results.value.length;
-};
-
+// Handle Enter key
 const handleEnter = () => {
   if (selectedIndex.value >= 0) {
     selectItem(results.value[selectedIndex.value]);
   } else {
-    handleSearch();
+    fetchResults(); // Force search
   }
+};
+
+// Keyboard navigation
+const moveSelection = (direction: number) => {
+  if (results.value.length === 0) return;
+  selectedIndex.value = (selectedIndex.value + direction + results.value.length) % results.value.length;
 };
 
 // Select item
@@ -125,15 +137,14 @@ const selectItem = (item: any) => {
   router.push(`/feed/${item.id}`);
 };
 
-// Click outside to close dropdown
+// Click outside to close
 const handleClickOutside = (event: MouseEvent) => {
-  if (searchContainer.value && !searchContainer.value.contains(event.target as Node)) {
+  if (searchContainerRef.value && !searchContainerRef.value.contains(event.target as Node)) {
     dropdownOpen.value = false;
   }
 };
 
 onMounted(() => document.addEventListener('click', handleClickOutside));
 onBeforeUnmount(() => document.removeEventListener('click', handleClickOutside));
-
 watch(query, debouncedFetch);
 </script>

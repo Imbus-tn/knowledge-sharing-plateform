@@ -27,9 +27,10 @@ public class RecommendationController {
     public ResponseEntity<?> search(
             @RequestParam String title,
             @RequestParam(defaultValue = "5") int top_n) {
-
+        // Forward request to Flask
         return forwardGet(contentRecommenderUrl + "/recommend", Map.of("title", title, "top_n", top_n));
     }
+
 
     // Personalized feed
     @GetMapping("/feed")

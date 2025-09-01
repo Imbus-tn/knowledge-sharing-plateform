@@ -6,23 +6,33 @@ import com.imbus.knowledge.User_Management.security.UserDetailsImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
+/**
+ * Controller for managing user's favorite posts.
+ */
 @RestController
-@RequestMapping("/api/content/posts")
+@RequestMapping("/api/content/favorites")
 @RequiredArgsConstructor
 public class FavoriteController {
 
     private final FavoriteService favoriteService;
 
-    @GetMapping("/favorites")
+    /**
+     * Get all favorite posts for the currently authenticated user.
+     * @param userDetails Authenticated user details
+     * @return List of favorite posts
+     */
+    @GetMapping
     public ResponseEntity<List<FavoritePostResponse>> getFavoritesForCurrentUser(
             @AuthenticationPrincipal UserDetailsImpl userDetails) {
+
         Long userId = userDetails.getUser().getId();
         List<FavoritePostResponse> favorites = favoriteService.getFavoritesByUser(userId);
         return ResponseEntity.ok(favorites);
     }
+
+
 }

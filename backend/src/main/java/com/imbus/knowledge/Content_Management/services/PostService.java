@@ -1,9 +1,6 @@
 package com.imbus.knowledge.Content_Management.services;
 
-import com.imbus.knowledge.Content_Management.dto.CreatePostRequest;
-import com.imbus.knowledge.Content_Management.dto.CommentRequest;
-import com.imbus.knowledge.Content_Management.dto.ReactionRequest;
-import com.imbus.knowledge.Content_Management.dto.ReportRequest;
+import com.imbus.knowledge.Content_Management.dto.*;
 import com.imbus.knowledge.Content_Management.entities.*;
 import com.imbus.knowledge.Content_Management.exception.PostNotFoundException;
 import com.imbus.knowledge.Content_Management.repositories.*;
@@ -11,6 +8,7 @@ import com.imbus.knowledge.User_Management.entities.User;
 import com.imbus.knowledge.User_Management.entities.UserRole;
 import com.imbus.knowledge.User_Management.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -18,9 +16,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PostService {
 
     private final PostRepository postRepository;
@@ -35,16 +39,23 @@ public class PostService {
 
 
 
-    public Post getPostById(Long postId) {
-        return postRepository.findById(postId)
-                .orElseThrow(() -> new PostNotFoundException(postId));
+    public Post getPostById(Long id) {
+        return postRepository.findWithDetailsById(id)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
     }
 
-    public Page<Post> getAllPosts(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
+    // PostService.java
+    public Page<Post> getAllPosts(Pageable pageable) {
         return postRepository.findAll(pageable);
     }
-
+    public Map<String, Long> getReactionCounts(Long postId) {
+        return reactionRepository.countByPostIdGroupedByEmoji(postId).stream()
+                .collect(Collectors.toMap(
+                        arr -> (String) arr[0],  // emoji
+                        arr -> (Long) arr[1]    // count
+                ));
+    }
+    // Add this method to PostService.java
     public Post updatePost(Long postId, CreatePostRequest request, Long userId) {
         Post post = getPostById(postId);
 
@@ -52,10 +63,27 @@ public class PostService {
             throw new SecurityException("You are not authorized to update this post.");
         }
 
+        // Update fields
         post.setContent(request.getContent());
         post.setImageUrl(request.getImageUrl());
+        post.setTitle(request.getTitle());
+        post.setDescription(request.getDescription());
+        post.setCategory(request.getCategory());
+        post.setTags(request.getTags());
         post.setUpdatedAt(LocalDateTime.now());
 
+        return postRepository.save(post);
+    }
+
+    public Post updatePostImage(Long postId, String imageUrl, Long userId) {
+        Post post = getPostById(postId);
+
+        if (!post.getAuthor().getId().equals(userId) && !isUserAdmin(userId)) {
+            throw new SecurityException("You are not authorized to update this post.");
+        }
+
+        post.setImageUrl(imageUrl);
+        post.setUpdatedAt(LocalDateTime.now());
         return postRepository.save(post);
     }
 
@@ -82,11 +110,9 @@ public class PostService {
         Post post = getPostById(postId);
         User user = getUserById(userId);
 
-        boolean alreadyFavorited = favoriteRepository.existsByUserAndPost(user, post);
-
-        if (alreadyFavorited) {
-            Favorite favorite = favoriteRepository.findByUserAndPost(user, post);
-            favoriteRepository.delete(favorite);
+        Optional<Favorite> existing = favoriteRepository.findByUserAndPost(user, post);
+        if (existing.isPresent()) {
+            favoriteRepository.delete(existing.get());
         } else {
             Favorite favorite = new Favorite();
             favorite.setUser(user);
@@ -120,31 +146,27 @@ public class PostService {
         postRepository.save(post);
     }
 
-    public void addCommentToPost(Long postId, CommentRequest request, Long userId) {
-        Post post = getPostById(postId);
-        User user = getUserById(userId);
 
-        Comment comment = new Comment();
-        comment.setText(request.getText());
-        comment.setPost(post);
-        comment.setAuthor(user);
-        comment.setCreatedAt(LocalDateTime.now());
-
-        commentRepository.save(comment);
-    }
-
-    public void replyToComment(Long commentId, CommentRequest request, Long userId) {
+    public Comment replyToComment(Long commentId, CommentRequest request, Long userId) {
         Comment parent = getCommentById(commentId);
         User user = getUserById(userId);
 
         Comment reply = new Comment();
         reply.setText(request.getText());
-        reply.setPost(parent.getPost()); // Same post
+        reply.setPost(parent.getPost());
         reply.setAuthor(user);
         reply.setParent(parent);
         reply.setCreatedAt(LocalDateTime.now());
 
-        commentRepository.save(reply);
+        Comment savedReply = commentRepository.save(reply);
+
+        // ✅ Add to parent's replies list
+        if (parent.getReplies() == null) {
+            parent.setReplies(new ArrayList<>());
+        }
+        parent.getReplies().add(savedReply);
+
+        return savedReply;
     }
 
     public void reactToComment(Long commentId, ReactionRequest request, Long userId) {
@@ -181,9 +203,10 @@ public class PostService {
     public void removeFavorite(Long postId, Long userId) {
         Post post = getPostById(postId);
         User user = getUserById(userId);
-        Favorite favorite = favoriteRepository.findByUserAndPost(user, post);
-        if (favorite != null) {
-            favoriteRepository.delete(favorite);
+
+        Optional<Favorite> existing = favoriteRepository.findByUserAndPost(user, post);
+        if (existing.isPresent()) {
+            favoriteRepository.delete(existing.get());
         }
     }
     public void sharePost(Long postId, Long userId) {
@@ -210,15 +233,18 @@ public class PostService {
         Post post = new Post();
         post.setContent(request.getContent());
         post.setImageUrl(request.getImageUrl());
+        post.setTitle(request.getTitle());
+        post.setDescription(request.getDescription());
+        post.setCategory(request.getCategory());
+        post.setTags(request.getTags());
+        post.setLinkUrl(request.getLinkUrl());
+        post.setLinkPreview(LinkPreviewDto.fromDto(request.getLinkPreview()));
         post.setAuthor(author);
         post.setCreatedAt(LocalDateTime.now());
 
-        // ✅ Set category and tags
-        post.setCategory(request.getCategory());
-        post.setTags(request.getTags());
-
         return postRepository.save(post);
     }
+
     @Transactional
     public void incrementViewCount(Long postId) {
         postRepository.incrementViewCount(postId);
@@ -234,4 +260,18 @@ public class PostService {
         return commentRepository.findById(commentId)
                 .orElseThrow(() -> new RuntimeException("Comment not found"));
     }
+    @Transactional
+    public Comment addCommentToPost(Long postId, CommentRequest request, Long userId) {
+        Post post = getPostById(postId);
+        User user = getUserById(userId);
+
+        Comment comment = new Comment();
+        comment.setText(request.getText());
+        comment.setPost(post);
+        comment.setAuthor(user);
+        comment.setCreatedAt(LocalDateTime.now());
+
+        return commentRepository.save(comment); // ✅ Return saved comment
+    }
+
 }

@@ -17,22 +17,12 @@
             />
           </router-link>
         </div>
+        
         <!-- Center Section - Search -->
         <div class="flex-1 flex items-center justify-center px-8" :class="{ 'opacity-0 pointer-events-none': !isActivePage('feed') }">
-          <div class="relative w-full max-w-lg">
-            <Search :class="isDark ? 'text-slate-400' : 'text-slate-500'" class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5" />
-            <input
-              type="text"
-              placeholder="Search..."
-              :class="[
-                isDark 
-                  ? 'bg-slate-700/50 border-slate-600 text-white placeholder-slate-400 focus:ring-emerald-500' 
-                  : 'bg-slate-200/70 border-slate-300 text-slate-900 placeholder-slate-500 focus:ring-emerald-600',
-                'w-full pl-10 pr-4 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 transition-colors'
-              ]"
-            />
-          </div>
+          <SearchBar />
         </div>
+
         <!-- Right Section -->
         <div class="flex items-center space-x-2">
           <!-- Feed Icon -->
@@ -48,6 +38,7 @@
           >
             <Home class="w-6 h-6" />
           </router-link>
+          
           <!-- Notifications -->
           <router-link
             to="/notifications"
@@ -60,13 +51,8 @@
             ]"
           >
             <Bell class="w-6 h-6" />
-            <!--<div v-if="unreadNotifications" class="absolute -top-1 -right-1">
-              <span class="animate-ping absolute h-4 w-4 rounded-full bg-red-400 opacity-75"></span>
-              <span class="relative bg-red-500 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">
-                {{ unreadNotifications > 9 ? '9+' : unreadNotifications }}
-              </span>
-            </div>-->
           </router-link>
+          
           <!-- Discussions -->
           <router-link
             to="/discussions"
@@ -79,14 +65,10 @@
             ]"
           >
             <MessageSquare class="w-6 h-6" />
-           <!-- <div v-if="unreadMessages" class="absolute -top-1 -right-1">
-              <span class="animate-ping absolute h-4 w-4 rounded-full bg-emerald-400 opacity-75"></span>
-              <span class="relative bg-emerald-500 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">
-                {{ unreadMessages > 9 ? '9+' : unreadMessages }}
-              </span>
-            </div>-->
           </router-link>
+          
           <div :class="isDark ? 'bg-slate-700' : 'bg-slate-200'" class="w-px h-8 mx-2"></div>
+          
           <!-- Profile Dropdown -->
           <div class="relative profile-menu">
             <button @click.stop="toggleProfileMenu" class="flex items-center space-x-3">
@@ -231,7 +213,8 @@
                   />
                   <span>Manage Users</span>
                 </router-link>
-                 <router-link v-if="authStore.isAdmin" to="/reported-posts" 
+                
+                <router-link v-if="authStore.isAdmin" to="/reported-posts" 
                   :class="[
                     'flex items-center px-4 py-3 text-sm transition-colors',
                     isDark 
@@ -245,8 +228,7 @@
                     class="w-5 h-5 mr-3" 
                   />
                   <span>Reported Posts</span>
-                  </router-link>
-
+                </router-link>
               </div>
 
               <!-- Logout -->
@@ -269,8 +251,8 @@
           </div>
         </div>
       </div>
-      </div>
-    </nav>
+    </div>
+  </nav>
 </template>
 
 <script setup lang="ts">
@@ -278,13 +260,14 @@ import { computed, ref, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { 
   Search, Home, Bell, MessageSquare, 
-  User, LayoutDashboard, UserPlus, Users,Sun, Moon, LogOut 
+  User, LayoutDashboard, UserPlus, Users, Sun, Moon, LogOut 
 } from 'lucide-vue-next';
 import logoDark from '../assets/logo-dark.png';
 import logoLight from '../assets/logo-light.png';
 import { useAuthStore } from '../stores/auth';
 import type { UserRole } from '../types/UserRole';
 import { useThemeStore } from '../stores/theme';
+import SearchBar from '../components/SearchBar.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -315,8 +298,6 @@ const userInitials = computed(() => {
     : '';
 });
 
-//const unreadNotifications = computed(() => authStore.unreadNotifications);
-//const unreadMessages = computed(() => authStore.unreadMessages);
 const isDark = computed(() => themeStore.isDark);
 const toggleTheme = () => themeStore.toggleTheme();
 

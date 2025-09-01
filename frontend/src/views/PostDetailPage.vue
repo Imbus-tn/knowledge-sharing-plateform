@@ -83,7 +83,12 @@
         </div>
 
         <!-- Post Image -->
-<img v-if="post.imageUrl" :src="getPostImageUrl(post.imageUrl)" alt="Post Image" />
+        <img
+          v-if="post.imageUrl"
+          :src="getPostImageUrl(post.imageUrl)"
+          alt="Post"
+          class="w-full h-96 object-cover mt-4 rounded-lg"
+        />
 
         <!-- Post Stats -->
         <div class="flex items-center justify-between mt-6 pt-6 border-t" :class="isDark ? 'border-slate-700' : 'border-slate-200'">
@@ -327,8 +332,9 @@
     </div>
 
     <!-- Post Not Found -->
-    <div v-else class="text-center py-10" :class="isDark ? 'text-slate-400' : 'text-slate-500'">
-      Post not found.
+    <div v-else class="text-center py-16">
+      <h3 class="text-xl font-medium text-white">Post not found</h3>
+      <p class="text-slate-400">The post you're looking for doesn't exist or has been removed.</p>
     </div>
   </div>
 </template>
@@ -342,8 +348,8 @@ import { useThemeStore } from '../stores/theme';
 import { useNotificationStore } from '../stores/notification';
 import { ThumbsUp, Star, Share2 } from 'lucide-vue-next';
 import type { Post } from '../types/post';
+import { UserRole } from '../types/UserRole';
 import { apiClient } from '../api';
-import { UserRole } from '../types/UserRole'; // ✅ Import enum
 
 const route = useRoute();
 const feedStore = useFeedStore();
@@ -359,7 +365,7 @@ const replyText = ref('');
 const replyingTo = ref<number | null>(null);
 const showReactionPickerFor = ref<number | null>(null);
 
-// ✅ Convert route param to number
+// Convert route param to number
 const postId = computed(() => {
   const id = Number(route.params.id);
   if (isNaN(id)) {
@@ -369,8 +375,18 @@ const postId = computed(() => {
   return id;
 });
 
-// ✅ Ref for current post
+// Ref for current post
 const post = ref<Post | null>(null);
+
+// Helper: Get initials
+const getInitials = (name: string | undefined): string => {
+  if (!name) return 'U';
+  return name
+    .split(' ')
+    .map(n => n[0].toUpperCase())
+    .join('')
+    .slice(0, 2);
+};
 
 // Format date
 const formatDate = (dateString: string): string => {
@@ -381,10 +397,14 @@ const formatDate = (dateString: string): string => {
     return 'Invalid Date';
   }
 };
+
+// Get full image URL
 const getPostImageUrl = (url: string | undefined): string => {
   if (!url) return '';
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-  return url.startsWith('http') ? url : `${apiUrl}${url}`;
+  if (url.startsWith('http')) return url;
+  if (url.startsWith('/uploads/')) return `${apiUrl}${url}`;
+  return `${apiUrl}/api${url}`;
 };
 
 // Get author avatar
@@ -406,80 +426,82 @@ const getTotalReactions = (post: Post) => {
 
 // Reaction picker
 let reactionHideTimer: number | null = null;
-
 const cancelReactionHideTimer = () => {
   if (reactionHideTimer) {
     clearTimeout(reactionHideTimer);
     reactionHideTimer = null;
   }
 };
-
 const showReactionPicker = (post: Post) => {
   showReactionPickerFor.value = post.id;
 };
-
 const hideReactionPicker = () => {
   reactionHideTimer = window.setTimeout(() => {
     showReactionPickerFor.value = null;
   }, 300);
 };
 
-// Type guard
-function isPost(data: any): data is Post {
-  return data && typeof data === 'object' && 'id' in data && 'title' in data;
-}
-
 // Lifecycle: Load post
 onMounted(async () => {
+  if (!postId.value) return;
+
   loading.value = true;
   error.value = null;
 
   try {
-    // Step 1: Try to find in store
-    let localPost = feedStore.posts.find(p => p.id === postId.value);
+   let foundPost: Post | undefined = feedStore.posts.find(p => p.id === postId.value);
 
-    // Step 2: If not found, fetch from API
-    if (!localPost) {
-      console.log(`Fetching post ID ${postId.value} from API...`);
-      const response = await apiClient.get(`/content/posts/${postId.value}`);
-      const data = 'data' in response ? response.data : response;
+try {
+  if (!foundPost) {
+    console.log(`Fetching post ID ${postId.value} from API...`);
+    const response = await apiClient.get(`/content/posts/${postId.value}`);
+    console.log('Raw API response:', response.data);
+    foundPost = response.data;
 
-      if (!isPost(data)) {
-        error.value = 'Invalid post data received from server.';
-        return;
-      }
-
-      // Add to store
-      const index = feedStore.posts.findIndex(p => p.id === data.id);
-      if (index === -1) {
-        feedStore.posts.unshift(data);
-      } else {
-        feedStore.posts[index] = data;
-      }
-
-      localPost = data;
+    if (!foundPost?.id) {
+      error.value = 'Post not found.';
+      return;
     }
 
-    // ✅ Normalize post data
-    if (!localPost.comments) localPost.comments = [];
-    if (!localPost.reactions) localPost.reactions = [];
-
-    if (!localPost.author) {
-      localPost.author = {
-        id: 0,
-        name: 'Unknown',
-        email: '',
-        role: UserRole.USER, // ✅ Use enum, not string
-        initials: 'U',
-        avatarUrl: undefined
-      };
+    const index = feedStore.posts.findIndex(p => p.id === foundPost!.id);
+    if (index === -1) {
+      feedStore.posts.unshift(foundPost);
     } else {
-      localPost.author.email = localPost.author.email ?? '';
-      localPost.author.role = localPost.author.role ?? UserRole.USER; // ✅ Use enum
-      localPost.author.initials = localPost.author.initials ?? localPost.author.name?.charAt(0).toUpperCase() ?? 'U';
+      feedStore.posts[index] = foundPost;
     }
+  }
 
-    post.value = localPost;
+  // ✅ Now safe to use
+  if (!foundPost.author) {
+    foundPost.author = {
+      id: 0,
+      name: 'Unknown',
+      email: '',
+      role: UserRole.USER,
+      initials: 'U',
+      avatarUrl: undefined
+    };
+  } else {
+    foundPost.author.role = foundPost.author.role ?? UserRole.USER;
+    foundPost.author.name = foundPost.author.name ?? 'Unknown';
+    foundPost.author.initials = foundPost.author.initials ?? getInitials(foundPost.author.name);
+  }
+
+  if (!foundPost.comments) foundPost.comments = [];
+
+  post.value = foundPost;
+} catch (err: any) {
+  if (err.response?.status === 404) {
+    error.value = 'Post not found.';
+  } else if (err.message.includes('Network Error')) {
+    error.value = 'Unable to connect to server.';
+  } else {
+    error.value = err.message || 'Failed to load post.';
+  }
+  console.error('Error loading post:', err);
+} finally {
+  loading.value = false;
+}
   } catch (err: any) {
     if (err.response?.status === 404) {
       error.value = 'Post not found.';

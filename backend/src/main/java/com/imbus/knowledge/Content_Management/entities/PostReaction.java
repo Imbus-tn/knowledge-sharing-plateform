@@ -1,5 +1,6 @@
 package com.imbus.knowledge.Content_Management.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.imbus.knowledge.User_Management.entities.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -27,11 +28,12 @@ public class PostReaction {
 
     @Column(nullable = false, length = 10)
     private String emoji;
-
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "post_id")
     private Post post;
 
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "comment_id")
     private Comment comment;

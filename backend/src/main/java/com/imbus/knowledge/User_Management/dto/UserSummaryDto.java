@@ -1,13 +1,15 @@
-package com.imbus.knowledge.Content_Management.dto;
+// src/main/java/com/imbus/knowledge/User_Management/dto/UserSummaryDto.java
+package com.imbus.knowledge.User_Management.dto;
 
 import com.imbus.knowledge.User_Management.entities.User;
 import com.imbus.knowledge.User_Management.entities.UserRole;
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 
 @Data
 @Builder
-public class AuthorDto {
+@NoArgsConstructor
+@AllArgsConstructor
+public class UserSummaryDto {
     private Long id;
     private String name;
     private String email;
@@ -20,11 +22,9 @@ public class AuthorDto {
     private UserRole role;
     private String initials;
 
-    // ✅ Convert User → AuthorDto
-    public static AuthorDto fromEntity(User user) {
-        if (user == null) return null;
-
-        return AuthorDto.builder()
+    // ✅ Add this factory method
+    public static UserSummaryDto fromUser(User user) {
+        return UserSummaryDto.builder()
                 .id(user.getId())
                 .name(user.getName())
                 .email(user.getEmail())
@@ -34,7 +34,7 @@ public class AuthorDto {
                 .github(user.getGithub())
                 .linkedin(user.getLinkedin())
                 .avatarUrl(user.getAvatarUrl())
-                .role(user.getRole()) // ✅ UserRole, not String
+                .role(user.getRole())
                 .initials(user.getInitials())
                 .build();
     }

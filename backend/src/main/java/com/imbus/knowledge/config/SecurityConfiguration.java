@@ -57,10 +57,13 @@ public class SecurityConfiguration implements WebMvcConfigurer {
 
                         // Content Management (write only)
                         .requestMatchers("/api/content/posts").authenticated()  // POST
-                        .requestMatchers("/api/content/posts/**").authenticated()  // PUT, DELETE
+                        .requestMatchers("/api/content/posts/**").authenticated()
+                        // PUT, DELETE
+                        .requestMatchers("/api/recommend/**").permitAll()
 
                         // Image Upload
-                        .requestMatchers("/api/upload/**").authenticated()
+                        .requestMatchers("/api/uploads/**").permitAll() // ✅ Add this
+                        .requestMatchers("/uploads/**").permitAll()
 
 
 

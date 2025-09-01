@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import axios from 'axios';
 import { getSocketService } from '../services/socket.service'; 
 export interface Notification {
-  id: string;type: 'system' | 'post' | 'reaction' | 'comment' | 'favorite' | 'error';
+  id: string;type: 'system' | 'post' | 'reaction' | 'comment' | 'favorite' | 'error'|'success';
   message: string;
   read: boolean;
   createdAt: string;

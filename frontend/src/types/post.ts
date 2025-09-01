@@ -1,5 +1,5 @@
 import type { User } from './user';
-import type { UserRole } from './UserRole';
+import  { UserRole } from './UserRole';
 import type{Reaction} from './reaction';
 
 
@@ -25,6 +25,7 @@ export interface Post {
   viewCount: number;
   likeCount: number;
   shareCount: number;
+  
 }
 
 // Simplified Author interface for API responses
@@ -41,7 +42,7 @@ export interface PostAuthor {
 export interface Comment {
   id: number; // Changed to number
   text: string;
-  post: Post;
+  post?: Post; // Make optional!: Post;
   author: User;
   parent?: Comment;
   createdAt: string;
@@ -95,16 +96,3 @@ export interface ReportRequest {
   reason: string;
 }
 
-export interface CreatePostRequest {
-  content: string;
-  imageUrl?: string;
-  title?: string;
-  description?: string;
-}
-export interface ReportedPost {
-  id: number;
-  post: Post;
-  reporter: User;
-  reason: string;
-  reportedAt: string;
-}

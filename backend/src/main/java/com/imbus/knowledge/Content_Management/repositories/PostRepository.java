@@ -13,9 +13,17 @@ import java.util.Optional;
 
 public interface PostRepository extends JpaRepository<Post, Long> {
 
-    @Query("SELECT p FROM Post p LEFT JOIN FETCH p.author LEFT JOIN FETCH p.postReactions WHERE p.id = :id")
-    Optional<Post> findByIdWithRelations(@Param("id") Long id);
-
+    @Query("SELECT DISTINCT p FROM Post p " +
+            "LEFT JOIN FETCH p.comments c " +
+            "LEFT JOIN FETCH c.author " +
+            "LEFT JOIN FETCH p.postReactions r " +
+            "LEFT JOIN FETCH r.user " +
+            "LEFT JOIN FETCH p.favorites f " +
+            "LEFT JOIN FETCH f.user " +
+            "LEFT JOIN FETCH p.shares s " +
+            "LEFT JOIN FETCH s.user " +
+            "WHERE p.id = :id")
+    Optional<Post> findWithDetailsById(@Param("id") Long id);
     @Query("SELECT p FROM Post p LEFT JOIN FETCH p.author ORDER BY p.createdAt DESC")
     Page<Post> findAllWithAuthors(Pageable pageable);
 
@@ -29,4 +37,5 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @Modifying
     @Query("UPDATE Post p SET p.viewCount = p.viewCount + 1 WHERE p.id = :id")
     void incrementViewCount(@Param("id") Long id);
+
 }

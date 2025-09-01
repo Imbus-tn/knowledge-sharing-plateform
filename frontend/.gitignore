@@ -11,8 +11,7 @@ node_modules
 dist
 dist-ssr
 *.local
-
-# Editor directories and files
+itor directories and files
 .vscode/*
 !.vscode/extensions.json
 .idea
@@ -29,3 +28,5 @@ recommendation_flask/venv/
 .env/
 __pycache__/
 *.pyc
+# Ignore large model files
+recommendation_flask/feed_recommender/*.h5

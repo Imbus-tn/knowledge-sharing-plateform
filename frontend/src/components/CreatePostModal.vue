@@ -217,7 +217,7 @@ const handleSubmit = async () => {
       const formData = new FormData();
       formData.append('file', blob, 'upload.jpg');
 
-      const response = await apiClient.post('/api/content/upload', formData, {
+      const response = await apiClient.post('/content/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       imageUrl = response.data.imageUrl; // e.g., "/content/images/abc.jpg"

@@ -19,7 +19,7 @@
 import { computed } from 'vue'
 import { useThemeStore } from '../stores/theme'
 import { useFavoritesStore } from '../stores/favorites'
-
+import { apiClient } from '../api';
 const props = defineProps<{
   item: {
     id: number
@@ -47,25 +47,24 @@ const isFavorite = computed(() => {
 })
 
 const toggleFavorite = async () => {
-  const favorited = isFavorite.value
-  const itemToToggle = {
-  id: props.item.id,
-  title: props.item.title || '',
-  description: props.item.description || '',
-  coverImage: props.item.coverImage || undefined,
-  type: props.item.type || undefined,
-  category: props.item.category || undefined,
-  createdAt: props.item.createdAt || new Date().toISOString(),
-  authorId: props.item.authorId || 'unknown',
-  likes: props.item.likes ?? 0,
-  comments: props.item.comments ?? 0,
-  shares: props.item.shares ?? 0
-}
+  const favorited = isFavorite.value;
 
   if (!favorited) {
-    await favoritesStore.toggleFavorite(itemToToggle)
+    // Add to favorites
+    try {
+      await apiClient.post(`/content/favorites/${props.item.id}`);
+      await favoritesStore.loadFavoritesFromAPI(); // Refresh list
+    } catch (err) {
+      console.error('Failed to add favorite:', err);
+    }
   } else {
-    await favoritesStore.removeFavorite(props.item.id)
+    // Remove from favorites
+    try {
+      await apiClient.delete(`/content/favorites/${props.item.id}`);
+      favoritesStore.items = favoritesStore.items.filter(fav => fav.id !== props.item.id);
+    } catch (err) {
+      console.error('Failed to remove favorite:', err);
+    }
   }
-}
+};
 </script>

@@ -1,4 +1,3 @@
-
 <template>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -41,7 +40,7 @@
                 'text-xl font-bold mb-1 transition-colors',
                 isDark ? 'text-white' : 'text-slate-900'
               ]">
-                {{ user?.name || 'John Doe' }}
+                {{ user?.name || 'Anonymous' }}
               </h2>
             </div>
             <!-- Quick Links -->
@@ -55,12 +54,7 @@
                     : 'text-slate-600 hover:bg-slate-200/70 hover:text-slate-900'
                 ]"
               >
-                <User 
-                  :class="[
-                    'w-5 h-5 mr-3 transition-colors',
-                    isDark ? 'text-slate-400' : 'text-slate-500'
-                  ]" 
-                />
+                <User class="w-5 h-5 mr-3" :class="isDark ? 'text-slate-400' : 'text-slate-500'" />
                 <span>View Profile</span>
               </router-link>
               <router-link 
@@ -72,12 +66,7 @@
                     : 'text-slate-600 hover:bg-slate-200/70 hover:text-slate-900'
                 ]"
               >
-                <LayoutDashboard 
-                  :class="[
-                    'w-5 h-5 mr-3 transition-colors',
-                    isDark ? 'text-slate-400' : 'text-slate-500'
-                  ]" 
-                />
+                <LayoutDashboard class="w-5 h-5 mr-3" :class="isDark ? 'text-slate-400' : 'text-slate-500'" />
                 <span>Dashboard</span>
               </router-link>
               <router-link 
@@ -89,12 +78,7 @@
                     : 'text-slate-600 hover:bg-slate-200/70 hover:text-slate-900'
                 ]"
               >
-                <Bookmark 
-                  :class="[
-                    'w-5 h-5 mr-3 transition-colors',
-                    isDark ? 'text-slate-400' : 'text-slate-500'
-                  ]" 
-                />
+                <Bookmark class="w-5 h-5 mr-3" :class="isDark ? 'text-slate-400' : 'text-slate-500'" />
                 <span>Favorites</span>
               </router-link>
             </div>
@@ -122,14 +106,13 @@
                   <component 
                     :is="topic.icon" 
                     :class="[
-                      'w-4 h-4 transition-colors duration-200',
+                      'w-4 h-4',
                       isDark 
                         ? 'text-slate-400 group-hover:text-emerald-500' 
                         : 'text-slate-500 group-hover:text-emerald-600'
                     ]" 
                   />
                   <span :class="[
-                    'transition-colors duration-200',
                     isDark 
                       ? 'text-slate-300 group-hover:text-white' 
                       : 'text-slate-600 group-hover:text-slate-900'
@@ -138,7 +121,7 @@
                   </span>
                 </div>
                 <span :class="[
-                  'text-sm transition-colors duration-200',
+                  'text-sm',
                   isDark ? 'text-slate-400' : 'text-slate-500'
                 ]">
                   {{ topic.posts }}
@@ -147,147 +130,124 @@
             </div>
           </div>
         </div>
-  
-        <!-- Main Content -->
-        <div class="lg:col-span-3">
-          <!-- Search Bar -->
-          <div class="mb-6">
-            <SearchBar v-model="searchQuery" />
+      </div>
+
+      <!-- Main Content -->
+      <div class="lg:col-span-3">
+        <!-- Search Bar -->
+        <div class="mb-6">
+          <SearchBar v-model="searchQuery" placeholder="Search your favorites..." />
+        </div>
+
+        <!-- Empty State -->
+        <div v-if="filteredFavorites.length === 0" class="text-center py-16">
+          <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-800 mb-4">
+            <Star class="w-8 h-8 text-slate-600" />
           </div>
-  
-          <!-- Empty State -->
-          <div v-if="favorites.length === 0" class="text-center py-16">
-            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-800 mb-4">
-              <Star class="w-8 h-8 text-slate-600" />
+          <h3 class="text-xl font-medium text-white mb-2">No favorites yet</h3>
+          <p class="text-slate-400 max-w-md mx-auto mb-6">
+            Start adding content to your favorites by clicking the star icon on any article, tutorial, or video.
+          </p>
+          <router-link to="/feed" class="inline-flex items-center px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors">
+            Browse Content
+          </router-link>
+        </div>
+
+        <!-- Favorites Grid -->
+        <div v-else class="space-y-6">
+          <div 
+            v-for="item in filteredFavorites" 
+            :key="item.id"
+            class="backdrop-blur-sm rounded-xl border shadow-xl overflow-hidden"
+            :class="isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-100/90 border-slate-300'"
+          >
+            <!-- Post Header -->
+            <div class="p-4">
+              <div class="flex items-center space-x-3">
+                <!-- Author Info -->
+                <div class="flex-shrink-0">
+                  <img
+                    v-if="item.author.avatarUrl"
+                    :src="getAvatarUrl(item.author.avatarUrl)"
+                    :alt="item.author.name"
+                    class="w-12 h-12 rounded-full object-cover"
+                  />
+                  <div
+                    v-else
+                    class="w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center"
+                  >
+                    <span class="text-white font-medium">{{ getAuthorInitials(item) }}</span>
+                  </div>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p :class="[
+                    'font-medium',
+                    isDark ? 'text-white' : 'text-slate-900'
+                  ]">
+                    {{ getAuthorName(item) }}
+                  </p>
+                  <p :class="[
+                    'text-xs',
+                    isDark ? 'text-slate-500' : 'text-slate-400'
+                  ]">
+                    <span>{{ item.author.role || 'User' }} • {{ formatDate(item.createdAt) }}</span>
+                  </p>
+                </div>
+                <!-- Favorite Button -->
+                <FavoriteButton :item="item" @removed="removeFromFavorites(item.id)" />
+              </div>
+              <h3 class="mt-3 font-bold text-lg" :class="isDark ? 'text-white' : 'text-slate-900'">
+                {{ item.title }}
+              </h3>
+              <p :class="isDark ? 'text-slate-300' : 'text-slate-700'">
+                {{ item.description }}
+              </p>
             </div>
-            <h3 class="text-xl font-medium text-white mb-2">No favorites yet</h3>
-            <p class="text-slate-400 max-w-md mx-auto mb-6">
-              Start adding content to your favorites by clicking the star icon on any article, tutorial, or video.
-            </p>
-            <router-link to="/feed" class="inline-flex items-center px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors">
-              Browse Content
-            </router-link>
-          </div>
-  
-          <!-- Favorites Grid -->
-          <div v-else class="space-y-6">
-            <div 
-              v-for="item in filteredFavorites" 
-              :key="item.id"
-              class="backdrop-blur-sm rounded-xl border shadow-xl overflow-hidden"
-              :class="isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-100/90 border-slate-300'"
-            >
-              <!-- Post Header -->
-              <div class="p-4">
-                <div class="flex items-center space-x-3">
-                  <!-- Author Info -->
-                  <div class="flex-shrink-0">
-                    <img
-                      v-if="item.author.avatarUrl"
-                      :src="getAvatarUrl(item.author.avatarUrl)"
-                      :alt="getAuthorName(item)"
-                      class="w-12 h-12 rounded-full object-cover"
-                    />
-                    <div
-                      v-else
-                      class="w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center"
-                    >
-                      <span class="text-white font-medium">{{ getAuthorInitials(item) }}</span>
+            <!-- Post Image -->
+            <img 
+              v-if="item.imageUrl" 
+              :src="getPostImageUrl(item.imageUrl)" 
+              :alt="item.title"
+              class="w-full h-96 object-cover"
+            />
+            <!-- Post Stats -->
+            <div class="px-4 py-2 border-t" :class="isDark ? 'border-slate-700' : 'border-slate-200'">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-1">
+                  <div class="flex -space-x-1">
+                    <div class="w-7 h-7 rounded-full bg-slate-700/50 flex items-center justify-center text-lg ring-2 ring-slate-800 transform hover:scale-110 transition-transform cursor-pointer">
+                      ❤️
                     </div>
                   </div>
-                  <div class="flex-1 min-w-0">
-                    <p :class="[
-                      'font-medium transition-colors',
-                      isDark ? 'text-white' : 'text-slate-900'
-                    ]">
-                      {{ getAuthorName(item) }}
-                    </p>
-                    <p :class="[
-                      'text-xs transition-colors',
-                      isDark ? 'text-slate-500' : 'text-slate-400'
-                    ]">
-                      <span>{{ item.author.role || 'User' }} • {{ formatDate(item.createdAt ?? new Date().toISOString()) }}</span>
-                    </p>
-                  </div>
-                  <!-- Favorite Button -->
-                  <div>
-                    <FavoriteButton :item="item" />
-                  </div>
+                  <span class="text-slate-400 text-sm ml-2">{{ formatNumber(item.likeCount || 0) }}</span>
                 </div>
-                <p 
-                  class="mt-3 transition-colors"
-                  :class="isDark ? 'text-slate-300' : 'text-slate-700'"
-                >
-                  {{ item.description }}
-                </p>
-              </div>
-              <!-- Post Image -->
-              <img 
-                v-if="item.coverImage"
-                :src="item.coverImage" 
-                :alt="item.title"
-                class="w-full h-96 object-cover"
-              />
-              <!-- Post Stats -->
-              <div class="px-4 py-2">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center space-x-1">
-                    <div class="flex -space-x-1">
-                      <div class="w-7 h-7 rounded-full bg-slate-700/50 flex items-center justify-center text-lg ring-2 ring-slate-800 transform hover:scale-110 transition-transform cursor-pointer">
-                        ❤️
-                      </div>
-                    </div>
-                    <span class="text-slate-400 text-sm ml-2">{{ formatNumber(item.likes ?? 0) }}</span>
+                <div class="flex items-center space-x-4 text-sm text-slate-400">
+                  <div class="flex items-center">
+                    <MessageSquare class="w-4 h-4 mr-1" />
+                    <span>{{ formatNumber(item.commentCount || 0) }}</span>
                   </div>
-                  <div class="flex items-center space-x-4 text-sm text-slate-400">
-                    <div class="flex items-center">
-                      <MessageSquare class="w-4 h-4 mr-1" />
-                      <span>{{ formatNumber(item.comments ?? 0) }}</span>
-                    </div>
-                    <div class="flex items-center">
-                      <Share2 class="w-4 h-4 mr-1" />
-                      <span>{{ formatNumber(item.shares ?? 0) }}</span>
-                    </div>
+                  <div class="flex items-center">
+                    <Share2 class="w-4 h-4 mr-1" />
+                    <span>{{ formatNumber(item.shareCount || 0) }}</span>
                   </div>
                 </div>
               </div>
-              <!-- Post Actions -->
-              <div class="px-4 py-2">
-                <div class="flex items-center justify-between">
-                  <button 
-                    class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors"
-                    :class="[
-                      isDark 
-                        ? 'text-slate-300 hover:bg-slate-700/50' 
-                        : 'text-slate-600 hover:bg-slate-200/50'
-                    ]"
-                  >
-                    <ThumbsUp class="w-5 h-5" />
-                    <span>Like</span>
-                  </button>
-                  <button 
-                    class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors"
-                    :class="[
-                      isDark 
-                        ? 'text-slate-300 hover:bg-slate-700/50' 
-                        : 'text-slate-600 hover:bg-slate-200/50'
-                    ]"
-                  >
-                    <MessageSquare class="w-5 h-5" />
-                    <span>Comment</span>
-                  </button>
-                  <button 
-                    class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors"
-                    :class="[
-                      isDark 
-                        ? 'text-slate-300 hover:bg-slate-700/50' 
-                        : 'text-slate-600 hover:bg-slate-200/50'
-                    ]"
-                  >
-                    <Share2 class="w-5 h-5" />
-                    <span>Share</span>
-                  </button>
-                </div>
+            </div>
+            <!-- Post Actions -->
+            <div class="px-4 py-2 border-t" :class="isDark ? 'border-slate-700' : 'border-slate-200'">
+              <div class="flex items-center justify-between">
+                <button class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors" :class="isDark ? 'text-slate-300 hover:bg-slate-700/50' : 'text-slate-600 hover:bg-slate-200/50'">
+                  <ThumbsUp class="w-5 h-5" />
+                  <span>Like</span>
+                </button>
+                <button class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors" :class="isDark ? 'text-slate-300 hover:bg-slate-700/50' : 'text-slate-600 hover:bg-slate-200/50'">
+                  <MessageSquare class="w-5 h-5" />
+                  <span>Comment</span>
+                </button>
+                <button class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors" :class="isDark ? 'text-slate-300 hover:bg-slate-700/50' : 'text-slate-600 hover:bg-slate-200/50'">
+                  <Share2 class="w-5 h-5" />
+                  <span>Share</span>
+                </button>
               </div>
             </div>
           </div>
@@ -298,26 +258,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { useThemeStore } from '../stores/theme';
 import { useFavoritesStore } from '../stores/favorites';
+import { useFeedStore } from '../stores/feed';
 import { Code, Server, Cloud, Database, Terminal, Lock } from 'lucide-vue-next';
-import type { FavoriteItem } from '../types/Favorite';
-
-// Icons
 import { Star, ThumbsUp, MessageSquare, Share2, User, LayoutDashboard, Bookmark } from 'lucide-vue-next';
 import FavoriteButton from '../components/FavoriteButton.vue';
 import SearchBar from '../components/SearchBar.vue';
 
-// Stores
 const authStore = useAuthStore();
 const themeStore = useThemeStore();
 const favoritesStore = useFavoritesStore();
+const feedStore = useFeedStore();
 
-// Computed values
 const user = computed(() => authStore.user);
 const isDark = computed(() => themeStore.isDark);
+const searchQuery = ref('');
 
 // Avatar URL
 const avatarUrl = computed(() => {
@@ -342,11 +300,12 @@ const trendingTopics = [
   { tag: 'security', icon: Lock, posts: '734 posts' },
 ];
 
-// Favorites list
-const favorites = computed(() => favoritesStore.items);
-const searchQuery = ref('');
+// Load favorites on mount
+onMounted(async () => {
+  await favoritesStore.loadFavoritesFromAPI();
+});
 
-// Filtered favorites with safe access
+// Filtered favorites
 const filteredFavorites = computed(() => {
   let result = [...favoritesStore.items];
 
@@ -358,14 +317,7 @@ const filteredFavorites = computed(() => {
     );
   }
 
-  return result.map(item => ({
-    ...item,
-    title: item.title || 'Untitled',
-    description: item.description || 'No description available.',
-    likes: item.likes ?? 0,
-    comments: item.comments ?? 0,
-    shares: item.shares ?? 0,
-  }));
+  return result;
 });
 
 // Format date
@@ -380,18 +332,18 @@ const formatDate = (timestamp: string): string => {
   }
 };
 
-// Format numbers like 1.2k instead of 1200
+// Format numbers
 const formatNumber = (num: number): string => {
   return new Intl.NumberFormat('en-US', { notation: 'compact' }).format(num);
 };
 
 // Get author name
-const getAuthorName = (item: FavoriteItem): string => {
+const getAuthorName = (item: any): string => {
   return item.author?.name || 'Unknown';
 };
 
-// Generate initials from author
-const getAuthorInitials = (item: FavoriteItem): string => {
+// Generate initials
+const getAuthorInitials = (item: any): string => {
   return item.author?.initials || '?';
 };
 
@@ -401,16 +353,15 @@ const getAvatarUrl = (avatarUrl: string | undefined): string => {
   return avatarUrl ? `${apiUrl}${avatarUrl}` : '';
 };
 
-defineExpose({
-  avatarUrl,
-  userInitials,
-  trendingTopics,
-  favorites,
-  filteredFavorites,
-  getAuthorName,
-  getAuthorInitials,
-  getAvatarUrl,
-  formatDate,
-  formatNumber,
-});
+// Get full post image URL
+const getPostImageUrl = (url: string | undefined): string => {
+  if (!url) return '';
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+  return url.startsWith('http') ? url : `${apiUrl}${url}`;
+};
+
+// Remove from favorites list (after un-favorite)
+const removeFromFavorites = (id: number) => {
+  favoritesStore.items = favoritesStore.items.filter(item => item.id !== id);
+};
 </script>

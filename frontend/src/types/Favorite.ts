@@ -1,8 +1,10 @@
 export interface FavoriteItem {
   id: number;
-  title: string;
+  type: string;
+   title: string;    
   description: string;
-  coverImage?: string;
+   category?: string;   
+  imageUrl?: string;       
   author: {
     name: string;
     initials: string;
@@ -10,9 +12,9 @@ export interface FavoriteItem {
     avatarUrl?: string;
   };
   createdAt: string;
-  likes: number;
-  comments: number;
-  shares: number;
+  likeCount: number;        
+  commentCount: number;     
+  shareCount: number;       
   isFavorite?: boolean;
 }
 

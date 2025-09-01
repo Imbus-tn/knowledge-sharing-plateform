@@ -1,5 +1,6 @@
 package com.imbus.knowledge.Content_Management.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.imbus.knowledge.User_Management.entities.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -35,7 +36,12 @@ public class Post {
     private String category;
     private String title;
     private String description;
+    @Column(columnDefinition = "TEXT")
+    private String linkUrl;
 
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "link_preview_id")
+    private LinkPreview linkPreview;
     @ElementCollection
     @CollectionTable(name = "post_tags", joinColumns = @JoinColumn(name = "post_id"))
     @Column(name = "tag")
@@ -57,7 +63,7 @@ public class Post {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
-
+    @JsonIgnore
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @OnDelete(action = OnDeleteAction.CASCADE)
     private List<PostReaction> postReactions = new ArrayList<>();
@@ -65,11 +71,14 @@ public class Post {
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Set<Favorite> favorites = new HashSet<>();
-
+@JsonIgnore
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @OnDelete(action = OnDeleteAction.CASCADE)
     private List<Comment> comments = new ArrayList<>();
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Share> shares = new ArrayList<>();
+    @JsonIgnore
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL)
+    private List<ReportedPost> reportedPosts = new ArrayList<>();
 }

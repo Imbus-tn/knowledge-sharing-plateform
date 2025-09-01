@@ -1,4 +1,3 @@
-
 <template>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -151,6 +150,7 @@
           </div>
         </div>
       </div>
+      
       <!-- Main Content -->
       <div class="lg:col-span-3">
         <!-- Create Post Card -->
@@ -182,10 +182,11 @@
                 <span class="text-white font-medium">{{ userInitials }}</span>
               </div>
             </div>
-            <!-- Post Input -->
+            <!-- Post Input - FIXED ENTER KEY -->
             <div class="flex-1 min-w-0">
               <div 
                 @click="showCreateModal = true"
+                @keydown.enter="showCreateModal = true"
                 tabindex="0"
                 :class="[
                   'w-full px-4 py-3 rounded-3xl cursor-pointer transition-all duration-200 border-2',
@@ -235,391 +236,364 @@
             </div>
           </div>
         </div>
-         <!-- Recommended for You -->
- <div v-if="feedStore.recommendedPosts.length > 0" class="mb-8">
-  <h2 class="text-2xl font-bold text-white mb-4">Recommended for You</h2>
+        
+        <!-- Recommended for You -->
+        <!-- Recommended for You - FIXED STYLING -->
+<div v-if="feedStore.recommendedPosts.length > 0" class="mb-8">
+  <h2 class="text-2xl font-bold mb-4" :class="isDark ? 'text-white' : 'text-slate-900'">Recommended for You</h2>
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
     <div
       v-for="post in feedStore.recommendedPosts"
       :key="post.id"
-      class="bg-slate-800/50 p-4 rounded-xl hover:bg-slate-700/50 transition cursor-pointer"
+      class="p-4 rounded-xl transition cursor-pointer border"
+      :class="isDark 
+        ? 'bg-slate-800/50 border-slate-700 hover:bg-slate-700/50' 
+        : 'bg-white border-slate-200 hover:bg-slate-50'"
       @click="$router.push(`/feed/${post.id}`)"
     >
-      <!-- Check if title and author exist -->
-      <div v-if="post.title && post.author?.name">
-        <h3 class="text-white font-semibold">{{ post.title }}</h3>
-        <p class="text-slate-400 text-sm mt-1 line-clamp-2">{{ post.description }}</p>
-        <div class="flex justify-between items-center mt-2 text-xs text-slate-500">
-          <span>{{ post.author.name }}</span>
-          <span>
-            {{ formatDate(post.createdAt) }}
-          </span>
-        </div>
+      <!-- Post Title -->
+      <h3 class="font-semibold mb-2" :class="isDark ? 'text-white' : 'text-slate-900'">
+        {{ post.title || 'Untitled Post' }}
+      </h3>
+      
+      <!-- Post Description -->
+      <p class="text-sm mb-3 line-clamp-3" :class="isDark ? 'text-slate-300' : 'text-slate-600'">
+        {{ post.description || post.content || 'No description available.' }}
+      </p>
+      
+      <!-- Author and Date -->
+      <div class="flex justify-between items-center mt-2 text-xs" :class="isDark ? 'text-slate-400' : 'text-slate-500'">
+        <span>{{ post.author?.name || 'Unknown Author' }}</span>
+        <span>{{ formatDate(post.createdAt) }}</span>
       </div>
     </div>
   </div>
 </div>
-
+        
         <!-- Posts Feed -->
-        <div v-if="!feedStore.loading && posts.length === 0" 
-          :class="[
-            'text-center py-10 transition-colors duration-200',
-            isDark ? 'text-slate-400' : 'text-slate-500'
-          ]">
-          No posts yet. Be the first to share something!
-        </div>
-        <div v-if="feedStore.loading" class="text-center py-10">
-          <div class="animate-spin rounded-full h-8 w-8 mx-auto"
-            :class="isDark ? 'border-t-2 border-b-2 border-emerald-500' : 'border-t-2 border-b-2 border-emerald-600'">
-          </div>
-        </div>
-        <div v-if="feedStore.error" 
-          class="text-center py-4"
-          :class="isDark ? 'text-red-400' : 'text-red-600'">
-          {{ feedStore.error }}
-        </div>
-        <div class="space-y-6">
-          <div 
-            v-for="post in posts" 
-            :key="post.id"
-            :class="[
-              'backdrop-blur-sm rounded-xl border shadow-xl overflow-hidden transition-colors duration-200',
+        <div v-if="posts.length > 0" class="space-y-6">
+          <div v-for="post in posts" :key="post.id">
+            <!-- Post Container -->
+            <div :class="[
+              'backdrop-blur-sm rounded-xl border shadow-xl overflow-hidden transition-colors duration-200 relative',
               isDark 
                 ? 'bg-slate-800/50 border-slate-700' 
                 : 'bg-slate-100/90 border-slate-300'
-            ]"
-            <!-- 3-dot Menu Button -->
-<div class="relative">
-  <button
-    @click="togglePostMenu(post.id)"
-    class="flex items-center justify-center w-8 h-8 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400"
-    :data-post-menu-button="post.id"
-  >
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-      <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-    </svg>
-  </button>
-
-  <!-- Dropdown Menu -->
-  <div
-    v-if="activePostMenu === post.id"
-    :data-post-menu="post.id"
-    class="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 z-50"
-  >
-    <button
-      @click="savePost(post)"
-      class="flex items-center w-full px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
-    >
-      <HeartIcon class="w-4 h-4 mr-2" />
-      {{ post.isFavorite ? 'Remove from Favorites' : 'Save to Favorites' }}
-    </button>
-
-    <button
-      @click="reportPost(post)"
-      class="flex items-center w-full px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
-    >
-      <FlagIcon class="w-4 h-4 mr-2" />
-      Report Post
-    </button>
-
-    <button
-      @click="sharePost(post)"
-      class="flex items-center w-full px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
-    >
-      <ShareIcon class="w-4 h-4 mr-2" />
-      Share Post
-    </button>
-
-    <!-- Admin: Delete Post -->
-    <button
-      v-if="authStore.user?.role === 'ADMIN'"
-      @click="deletePost(post)"
-      class="flex items-center w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
-    >
-      <TrashIcon class="w-4 h-4 mr-2" />
-      Delete Post
-    </button>
-  </div>
-</div>
-          >
-            <!-- Post Header -->
-            <div class="p-4">
-              <div class="flex items-center space-x-3">
-                <!-- Author Info -->
-                <div class="flex-shrink-0">
-                  <img 
-                    v-if="post.author.avatarUrl" 
-                    :src="getAuthorAvatar(post.author)" 
-                    alt="Author Avatar"
-                    class="w-12 h-12 rounded-full object-cover"
-                    :class="isDark ? 'border-2 border-slate-800' : 'border-2 border-white'"
-                  >
-                  <div 
-                    v-else 
-                    :class="[
-                      'w-12 h-12 rounded-full flex items-center justify-center transition-colors',
-                      isDark ? 'border-2 border-slate-800' : 'border-2 border-white',
-                      isDark ? 'bg-slate-700' : 'bg-slate-600'
-                    ]"
-                  >
-                    <span class="text-white font-medium">{{ post.author.initials }}</span>
+            ]">
+              <!-- Post Header -->
+              <div class="p-4">
+                <div class="flex items-center space-x-3">
+                  <!-- Author Info -->
+                  <div class="flex-shrink-0">
+                    <img 
+                      v-if="post.author.avatarUrl" 
+                      :src="getAuthorAvatar(post.author)" 
+                      alt="Author Avatar"
+                      class="w-12 h-12 rounded-full object-cover border-2"
+                      :class="isDark ? 'border-slate-800' : 'border-white'"
+                    >
+                    <div 
+                      v-else 
+                      :class="[
+                        'w-12 h-12 rounded-full flex items-center justify-center border-2',
+                        isDark ? 'border-slate-800 bg-slate-700' : 'border-white bg-slate-600'
+                      ]"
+                    >
+                      <span class="text-white font-medium">{{ post.author.initials || 'U' }}</span>
+                    </div>
                   </div>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <p :class="[
-                    'font-medium transition-colors',
-                    isDark ? 'text-white' : 'text-slate-900'
-                  ]">
-                    {{ post.author.name }}
-                  </p>
-                  <p :class="[
-                    'text-xs transition-colors',
-                    isDark ? 'text-slate-500' : 'text-slate-400'
-                  ]">
-                    <span>{{ post.author.role || 'User' }} • {{ formatTime(post.createdAt) }}</span>
-                  </p>
-                </div>
-                <!-- More Menu -->
-                <div class="relative">
-                  <button 
-                    @click="togglePostMenu(post.id)"
-                    :class="[
-                      'p-2 rounded-lg transition-all duration-200',
-                      isDark 
-                        ? 'text-slate-400 hover:text-white hover:bg-slate-700/50' 
-                        : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/50'
-                    ]"
-                    :data-post-menu-button="post.id"
-                  >
-                    <MoreVertical class="w-5 h-5" />
-                  </button>
-                  <!-- Dropdown Menu -->
-                  <div v-if="activePostMenu === post.id"
-                    :class="[
-                      'absolute right-0 mt-2 w-48 rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 z-50',
-                      isDark ? 'bg-slate-800' : 'bg-white'
-                    ]"
-                    :data-post-menu="post.id"
-                  >
-                    <div class="py-1">
-                      <button 
-                        @click="editPost"
-                        :class="[
-                          'flex items-center w-full px-4 py-2 text-sm transition-colors',
-                          isDark 
-                            ? 'text-slate-300 hover:bg-slate-700 hover:text-white' 
-                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                        ]"
-                      >
-                        <Edit 
-                          :class="isDark ? 'text-slate-400' : 'text-slate-500'" 
-                          class="w-4 h-4 mr-2" 
-                        />
-                        Edit Post
-                      </button>
-                      <button 
+                  
+                  <div class="flex-1 min-w-0">
+                    <p :class="[
+                      'font-medium transition-colors',
+                      isDark ? 'text-white' : 'text-slate-900'
+                    ]">
+                      {{ post.author.name || 'Unknown User' }}
+                    </p>
+                    <p :class="[
+                      'text-xs transition-colors',
+                      isDark ? 'text-slate-500' : 'text-slate-400'
+                    ]">
+                      <span>{{ post.author.role || 'User' }} • {{ formatTime(post.createdAt) }}</span>
+                    </p>
+                  </div>
+                  
+                  <!-- 3-dot Menu Button - FIXED STYLING -->
+                  <div class="relative">
+                    <button
+                      @click="togglePostMenu(post.id)"
+                      class="flex items-center justify-center w-8 h-8 rounded-full transition-colors"
+                      :class="isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-200 text-slate-500'"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                      </svg>
+                    </button>
+
+                    <!-- Dropdown Menu -->
+                    <div
+                      v-if="activePostMenu === post.id"
+                      class="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 z-50"
+                    >
+                      <button
                         @click="savePost(post)"
-                        :class="[
-                          'flex items-center w-full px-4 py-2 text-sm transition-colors',
-                          isDark 
-                            ? 'text-slate-300 hover:bg-slate-700 hover:text-white' 
-                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                        ]"
+                        class="flex items-center w-full px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
                       >
-                        <Bookmark 
-                          :class="isDark ? 'text-slate-400' : 'text-slate-500'" 
-                          class="w-4 h-4 mr-2" 
-                        />
-                        Save Post
+                        <HeartIcon class="w-4 h-4 mr-2" />
+                        {{ post.isFavorite ? 'Remove from Favorites' : 'Save to Favorites' }}
                       </button>
-                       <!--<button 
-                        @click="sharePost(post)"
-                        :class="[
-                          'flex items-center w-full px-4 py-2 text-sm transition-colors',
-                          isDark 
-                            ? 'text-slate-300 hover:bg-slate-700 hover:text-white' 
-                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                        ]"
-                      >
-                        <Share2 
-                          :class="isDark ? 'text-slate-400' : 'text-slate-500'" 
-                          class="w-4 h-4 mr-2" 
-                        />
-                        Share Post
-                      </button> -->
-                     <!-- <button 
-                        @click="reportPost(post)"
-                        :class="[
-                          'flex items-center w-full px-4 py-2 text-sm transition-colors',
-                          isDark 
-                            ? 'text-slate-300 hover:bg-slate-700 hover:text-white' 
-                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                        ]"
-                      >
-                        <Flag 
-                          :class="isDark ? 'text-slate-400' : 'text-slate-500'" 
-                          class="w-4 h-4 mr-2" 
-                        />
-                        Report Post
-                      </button>-->
-                       <!-- Report Post -->
+
                       <button
                         @click="reportPost(post)"
-                        class="flex items-center w-full px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+                        class="flex items-center w-full px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span>Report Post</span>
+                        <FlagIcon class="w-4 h-4 mr-2" />
+                        Report Post
                       </button>
-                      <button 
-                        @click="deletePost(post)"
-                        :class="[
-                          'flex items-center w-full px-4 py-2 text-sm transition-colors',
-                          isDark 
-                            ? 'text-red-400 hover:bg-slate-700' 
-                            : 'text-red-600 hover:bg-slate-100'
-                        ]"
+
+                      <button
+                        @click="sharePost(post)"
+                        class="flex items-center w-full px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
                       >
-                        <Trash2 
-                          :class="isDark ? 'text-red-400' : 'text-red-600'" 
-                          class="w-4 h-4 mr-2" 
-                        />
+                        <ShareIcon class="w-4 h-4 mr-2" />
+                        Share Post
+                      </button>
+
+                      <!-- Admin: Delete Post -->
+                      <button
+                        v-if="authStore.user?.role === 'ADMIN'"
+                        @click="deletePost(post)"
+                        class="flex items-center w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
+                      >
+                        <TrashIcon class="w-4 h-4 mr-2" />
                         Delete Post
                       </button>
                     </div>
                   </div>
                 </div>
+                
+                <!-- Post Content -->
+                <p 
+                  class="mt-3 transition-colors"
+                  :class="isDark ? 'text-slate-300' : 'text-slate-700'"
+                >
+                  {{ post.content }}
+                </p>
               </div>
-              <p 
-                class="mt-3 transition-colors"
-                :class="isDark ? 'text-slate-300' : 'text-slate-700'"
-              >
-                {{ post.content }}
-              </p>
-            </div>
-            <!-- Post Image -->
-            <img 
-              v-if="post.imageUrl"
-              :src="post.imageUrl" 
-              :alt="post.content"
-              class="w-full h-96 object-cover"
-            />
-            <!-- Post Stats -->
-            <div class="px-4 py-2">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-1">
-                  <div class="flex -space-x-1">
-                    <div 
-                      v-for="reaction in getTopReactions(post)" 
-                      :key="reaction.emoji"
-                      class="w-7 h-7 rounded-full bg-slate-700/50 flex items-center justify-center text-lg ring-2 ring-slate-800 transform hover:scale-110 transition-transform cursor-pointer"
-                      :title="`${reaction.count} ${reaction.emoji}`"
-                    >
-                      {{ reaction.emoji }}
-                    </div>
-                  </div>
-                  <span class="text-slate-400 text-sm ml-2">{{ getTotalReactions(post) }}</span>
-                </div>
-                <div class="flex items-center space-x-4 text-sm text-slate-400">
-                  <div class="flex items-center">
-                    <MessageSquare class="w-4 h-4 mr-1" />
-                    <span>{{ post.comments.length }}</span>
-                  </div>
-                  <div class="flex items-center">
-                    <Share2 class="w-4 h-4 mr-1" />
-                    <span>{{ post.shares.length }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <!-- Post Actions -->
-            <div class="px-4 py-2 relative">
-              <div class="flex items-center justify-between">
-                <!-- Like Button with Reaction Options -->
-                <div class="relative">
-                  <div class="relative group/reactions">
-                    <button 
-                      @click="showReactionPicker(post)"
-                      class="flex items-center space-x-2 px-3 py-2 rounded-xl transition-all duration-200"
-                      :class="[
-                        isDark 
-                          ? 'text-slate-300 hover:bg-slate-700/50' 
-                          : 'text-slate-600 hover:bg-slate-200/50'
-                      ]"
-                      @mouseenter="showReactionPickerFor = post.id"
-                      @mouseleave="handleReactionMouseLeave"
-                    >
-                      <ThumbsUp class="w-5 h-5" />
-                      <span>Like</span>
-                    </button>
-                    <!-- Reaction Picker Popup -->
-                    <div 
-                      v-if="showReactionPickerFor === post.id"
-                      class="absolute bottom-full left-0 mb-2 bg-slate-800 rounded-full shadow-lg border border-slate-700 p-2 z-50 transition-all duration-200 transform origin-bottom-left"
-                      @mouseenter="cancelReactionHideTimer"
-                      @mouseleave="hideReactionPicker"
-                    >
-                      <div class="flex items-center space-x-1">
-                        <button 
-                          v-for="emoji in reactionEmojis" 
-                          :key="emoji"
-                          @click="addReaction(post, emoji)"
-                          class="w-8 h-8 flex items-center justify-center rounded-full transition-all duration-200 text-xl transform hover:scale-125"
-                          :class="[
-                            isDark 
-                              ? 'hover:bg-slate-700/50' 
-                              : 'hover:bg-slate-200/50',
-                            hasReacted(post, emoji) ? 'bg-slate-700 scale-110' : ''
-                          ]"
-                        >
-                          {{ emoji }}
-                        </button>
+              
+              <!-- Post Image -->
+              <img 
+                v-if="post.imageUrl"
+                :src="post.imageUrl" 
+                :alt="post.content"
+                class="w-full h-96 object-cover"
+              />
+              
+              <!-- Post Stats -->
+              <div class="px-4 py-2">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center space-x-1">
+                    <div class="flex -space-x-1">
+                      <div 
+                        v-for="reaction in getTopReactions(post)" 
+                        :key="reaction.emoji"
+                        class="w-7 h-7 rounded-full bg-slate-700/50 flex items-center justify-center text-lg ring-2 ring-slate-800 transform hover:scale-110 transition-transform cursor-pointer"
+                        :title="`${reaction.count} ${reaction.emoji}`"
+                      >
+                        {{ reaction.emoji }}
                       </div>
                     </div>
+                    <span class="text-slate-400 text-sm ml-2">{{ getTotalReactions(post) }}</span>
+                  </div>
+                  <div class="flex items-center space-x-4 text-sm text-slate-400">
+                    <div class="flex items-center">
+                      <MessageSquare class="w-4 h-4 mr-1" />
+                      <span>{{ post.comments?.length || 0 }}</span>
+                    </div>
+                    <div class="flex items-center">
+                      <Share2 class="w-4 h-4 mr-1" />
+                      <span>{{ post.shares?.length || 0 }}</span>
+                    </div>
                   </div>
                 </div>
-                <button 
-                  class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors"
-                  :class="[
-                    isDark 
-                      ? 'text-slate-300 hover:bg-slate-700/50' 
-                      : 'text-slate-600 hover:bg-slate-200/50'
-                  ]"
-                >
-                  <MessageSquare class="w-5 h-5" />
-                  <span>Comment</span>
-                </button>
-                <button 
-                  class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors"
-                  :class="[
-                    isDark 
-                      ? 'text-slate-300 hover:bg-slate-700/50' 
-                      : 'text-slate-600 hover:bg-slate-200/50'
-                  ]"
-                >
-                  <Share2 class="w-5 h-5" />
-                  <span>Share</span>
-                </button>
-                <!-- Favorite Button -->
-                <button 
-                  @click="toggleFavorite(post)"
-                  class="flex items-center space-x-2 px-4 py-2 rounded-xl transition-all duration-200"
-                  :class="[
-                    post.isFavorite 
-                      ? 'text-amber-400 bg-amber-500/10' 
-                      : isDark ? 'text-slate-300 hover:bg-slate-700/50' : 'text-slate-600 hover:bg-slate-200/50'
-                  ]"
-                >
-                  <Star class="w-5 h-5" :class="{ 'fill-current': post.isFavorite }" />
-                  <span>{{ post.isFavorite ? 'Favorited' : 'Favorite' }}</span>
-                </button>
+              </div>
+              
+              <!-- Post Actions - FIXED LAYOUT -->
+              <div class="px-4 py-2">
+                <div class="flex items-center justify-between">
+                  <!-- Like Button -->
+                   <button
+                    @click="showReactionPicker(post)"
+                    @mouseenter="showReactionPicker(post)"
+                    @mouseleave="handleReactionMouseLeave"
+                    :class="[
+                      'flex items-center space-x-2 px-3 py-2 rounded-xl transition-all duration-200',
+                      isDark ? 'text-slate-300 hover:bg-slate-700/50' : 'text-slate-600 hover:bg-slate-200/50'
+                    ]"
+                  >
+                    <ThumbsUp class="w-5 h-5" />
+                    <span>Like</span>
+                  </button>
+                  <!-- Reaction Picker Popup -->
+                  <div
+                    v-if="showReactionPickerFor === post.id"
+                    class="absolute bottom-full left-0 mb-2 bg-slate-800 rounded-full shadow-lg border border-slate-700 p-2 z-50 transition-all duration-200 transform origin-bottom-left"
+                    style="transform: translateY(-8px);"
+                    @mouseenter="cancelReactionHideTimer"
+                    @mouseleave="hideReactionPicker"
+                  >
+                    <div class="flex items-center space-x-1">
+                      <button
+                        v-for="emoji in reactionEmojis"
+                        :key="emoji"
+                        @click="addReaction(post, emoji)"
+                        class="w-8 h-8 flex items-center justify-center rounded-full transition-all duration-200 text-xl transform hover:scale-125"
+                        :class="isDark ? 'hover:bg-slate-700/50' : 'hover:bg-slate-200/50'"
+                      >
+                        {{ emoji }}
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <!-- Comment Button -->
+                  <button 
+                    @click="toggleCommentInput(post.id)"
+                    class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors"
+                    :class="[
+                      isDark 
+                        ? 'text-slate-300 hover:bg-slate-700/50' 
+                        : 'text-slate-600 hover:bg-slate-200/50'
+                    ]"
+                  >
+                    <MessageSquare class="w-5 h-5" />
+                    <span>Comment</span>
+                  </button>
+                  
+                  <!-- Share Button -->
+                  <button 
+                    @click="sharePost(post)"
+                    class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors"
+                    :class="[
+                      isDark 
+                        ? 'text-slate-300 hover:bg-slate-700/50' 
+                        : 'text-slate-600 hover:bg-slate-200/50'
+                    ]"
+                  >
+                    <Share2 class="w-5 h-5" />
+                    <span>Share</span>
+                  </button>
+                  
+                  <!-- Favorite Button -->
+                  <button 
+                    @click="toggleFavorite(post)"
+                    class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors"
+                    :class="[
+                      post.isFavorite 
+                        ? 'text-amber-400 bg-amber-500/10' 
+                        : isDark ? 'text-slate-300 hover:bg-slate-700/50' : 'text-slate-600 hover:bg-slate-200/50'
+                    ]"
+                  >
+                    <Star class="w-5 h-5" :class="{ 'fill-current': post.isFavorite }" />
+                    <span>{{ post.isFavorite ? 'Favorited' : 'Favorite' }}</span>
+                  </button>
+                </div>
+              </div>
+              
+              <!-- Comment Input Section - FIXED POSITION -->
+              <div v-if="showCommentInputFor === post.id" class="px-4 pt-2 pb-4 border-t" :class="isDark ? 'border-slate-700' : 'border-slate-200'">
+                <div class="flex items-start space-x-3">
+                  <img 
+                    v-if="avatarUrl" 
+                    :src="avatarUrl" 
+                    alt="Your Avatar"
+                    class="w-8 h-8 rounded-full object-cover"
+                  >
+                  <div 
+                    v-else 
+                    :class="[
+                      'w-8 h-8 rounded-full flex items-center justify-center',
+                      isDark ? 'bg-emerald-500' : 'bg-emerald-600'
+                    ]"
+                  >
+                    <span class="text-white font-medium text-xs">{{ userInitials }}</span>
+                  </div>
+                  <div class="flex-1">
+                    <input
+                      v-model="commentTexts[post.id]"
+                      @keydown.enter="handleAddComment(post)"
+                      placeholder="Add a comment..."
+                      class="w-full px-3 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      :class="isDark 
+                        ? 'bg-slate-700 border-slate-600 text-white' 
+                        : 'bg-white border-slate-300 text-slate-900'
+                      "
+                    />
+                    <div class="flex justify-end mt-2">
+                      <button
+                        @click="handleAddComment(post)"
+                        :disabled="!commentTexts[post.id]?.trim()"
+                        :class="[
+                          'px-4 py-2 rounded-lg transition-colors',
+                          isDark 
+                            ? 'bg-emerald-500 text-white hover:bg-emerald-600 disabled:bg-slate-600' 
+                            : 'bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-slate-300'
+                        ]"
+                      >
+                        Post Comment
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Existing Comments -->
+              <div v-if="post.comments && post.comments.length > 0" class="px-4 py-2 border-t" :class="isDark ? 'border-slate-700' : 'border-slate-200'">
+                <div v-for="comment in post.comments" :key="comment.id" class="py-2">
+                  <div class="flex items-start space-x-2">
+                    <img 
+                      v-if="comment.author?.avatarUrl" 
+                      :src="getAuthorAvatar(comment.author)" 
+                      alt="Commenter Avatar"
+                      class="w-8 h-8 rounded-full object-cover"
+                    >
+                    <div 
+                      v-else 
+                      :class="[
+                        'w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium',
+                        isDark ? 'bg-slate-700 text-white' : 'bg-slate-200 text-slate-800'
+                      ]"
+                    >
+                      {{ getInitials(comment.author?.name) }}
+                    </div>
+                    <div class="flex-1">
+                      <p :class="['font-medium', isDark ? 'text-white' : 'text-slate-900']">
+                        {{ comment.author?.name || 'Unknown User' }}
+                      </p>
+                      <p :class="['text-sm', isDark ? 'text-slate-400' : 'text-slate-600']">
+                        {{ comment.text }}
+                      </p>
+                      <p class="text-xs text-slate-500 mt-1">
+                        {{ formatTime(comment.createdAt) }}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
+        
+        <!-- Loading and Empty States -->
+        <div v-if="feedStore.loading" class="text-center py-10">
+          <div class="animate-spin h-8 w-8 mx-auto rounded-full border-t-2 border-b-2 border-emerald-500"></div>
+        </div>
+        
+        <div v-else-if="posts.length === 0" class="text-center py-10 text-slate-500">
+          No posts yet. Be the first to share something!
+        </div>
       </div>
     </div>
+    
     <!-- Create Post Modal -->
     <CreatePostModal 
       v-if="showCreateModal"
@@ -647,18 +621,169 @@ import type { Post } from '../types/post';
 import type { Reaction } from '../types/reaction';
 import { UserRole } from '../types/UserRole';
 import { HeartIcon, FlagIcon, ShareIcon, TrashIcon } from '@heroicons/vue/24/outline';
+import { apiClient } from '../api';
+
 const router = useRouter();
 const feedStore = useFeedStore();
 const authStore = useAuthStore();
-
+const refreshInterval = ref<NodeJS.Timeout | null>(null);
+const lastRefreshTime = ref<Date>(new Date());
+const hasNewPosts = ref(false);
+const showRefreshButton = ref(false);
 const themeStore = useThemeStore();
 const user = computed(() => authStore.user);
 const notificationStore = useNotificationStore();
 const showCreateModal = ref(false);
 const activePostMenu = ref<number | null>(null);
-const posts = computed(() => feedStore.posts);
+const posts = computed<Post[]>(() => {
+  const raw = feedStore.posts;
+  return Array.isArray(raw) ? raw : [];
+});
 const isDark = computed(() => themeStore.isDark);
 const reactionPickerPosition = ref({ top: '0px', left: '0px' });
+const showCommentInputFor = ref<number | null>(null);
+const newComment = ref<{ [key: number]: string }>({});
+// ✅ Add these at the top level of <script setup>
+const commentTexts = ref<Record<number, string>>({});
+const toggleCommentInput = (postId: number) => {
+  showCommentInputFor.value = showCommentInputFor.value === postId ? null : postId;
+  if (showCommentInputFor.value === postId) {
+    commentTexts.value[postId] = '';
+  }
+};
+const replyText = ref('');
+const replyingTo = ref<number | null>(null);
+const activeCommentReactions = ref<Set<number>>(new Set());
+const getInitials = (name: string | undefined): string => {
+  if (!name) return 'U';
+  return name
+    .split(' ')
+    .map(n => n[0].toUpperCase())
+    .join('')
+    .slice(0, 2);
+};
+const checkForNewPosts = async () => {
+  try {
+    const response = await apiClient.get('/content/posts/latest', {
+      params: {
+        since: lastRefreshTime.value.toISOString()
+      }
+    });
+    
+    if (response.data.length > 0) {
+      hasNewPosts.value = true;
+      showRefreshButton.value = true;
+    }
+  } catch (error) {
+    console.error('Error checking for new posts:', error);
+  }
+};
+
+const refreshFeed = async () => {
+  try {
+    await feedStore.fetchPosts();
+    lastRefreshTime.value = new Date();
+    hasNewPosts.value = false;
+    showRefreshButton.value = false;
+    
+    notificationStore.addNotification({
+      type: 'system',
+      message: 'Feed updated with new posts',
+      link: '/feed'
+    });
+  } catch (error) {
+    console.error('Error refreshing feed:', error);
+  }
+};
+
+const setupAutoRefresh = () => {
+  // Check for new posts every 30 seconds
+  refreshInterval.value = setInterval(checkForNewPosts, 30000);
+};
+
+// ✅ Function to add comment
+const handleAddComment = async (post: Post) => {
+  const text = commentTexts.value[post.id]?.trim();
+  if (!text) return;
+
+  try {
+    await feedStore.addComment(post.id, text);
+    commentTexts.value[post.id] = ''; // Clear input
+  } catch (err) {
+    notificationStore.addNotification({
+      type: 'error',
+      message: 'Failed to add comment.',
+      link: '/feed'
+    });
+  }
+};
+
+// ✅ Optional: Start reply
+const startReply = (commentId: number) => {
+  replyingTo.value = commentId;
+  replyText.value = '';
+};
+
+// ✅ Cancel reply
+const cancelReply = () => {
+  replyingTo.value = null;
+  replyText.value = '';
+};
+
+// ✅ Add reply
+const addReply = async (parentComment: any) => {
+  if (!replyText.value.trim()) return;
+  try {
+    await feedStore.addComment(parentComment.id, replyText.value);
+    cancelReply();
+  } catch (err) {
+    notificationStore.addNotification({
+      type: 'error',
+      message: 'Failed to reply.',
+      link: '/feed'
+    });
+  }
+};
+
+// ✅ Toggle comment reactions
+const toggleCommentReactions = (commentId: number) => {
+  const set = activeCommentReactions.value;
+  if (set.has(commentId)) {
+    set.delete(commentId);
+  } else {
+    set.add(commentId);
+  }
+};
+
+const addComment = async (post: Post) => {
+  const commentText = newComment.value[post.id]?.trim();
+  if (!commentText) {
+    notificationStore.addNotification({
+      type: 'error',
+      message: 'Comment cannot be empty.',
+      link: '/feed'
+    });
+    return;
+  }
+
+  try {
+    await feedStore.addComment(post.id, commentText);
+    newComment.value[post.id] = ''; // Clear input
+    showCommentInputFor.value = null; // Hide input
+    notificationStore.addNotification({
+      type: 'system',
+      message: 'Comment added successfully.',
+      link: `/post/${post.id}`
+    });
+  } catch (error) {
+    console.error('Failed to add comment:', error);
+    notificationStore.addNotification({
+      type: 'error',
+      message: 'Failed to add comment.',
+      link: '/feed'
+    });
+  }
+};
 const formatDate = (dateString: string): string => {
   try {
     const date = new Date(dateString);
@@ -756,44 +881,58 @@ const addReaction = async (post: Post, emoji: string) => {
   const currentUserId = String(currentUser?.id);
 
   if (!currentUserId || !currentUser) {
-    console.warn("User not logged in");
+    notificationStore.addNotification({
+      type: 'error',
+      message: 'You must be logged in to react to posts.',
+      link: '/login'
+    });
     return;
   }
 
-  try {
-    await feedStore.reactToPost(post.id, emoji);
-    let reaction = post.reactions.find((r: Reaction) => r.emoji === emoji);
+  // Optimistic update
+  const originalReactions = [...post.reactions];
+  let reaction = post.reactions.find((r: Reaction) => r.emoji === emoji);
 
-    if (reaction) {
-      if (reaction.users?.includes(currentUserId)) {
-        reaction.count = (reaction.count ?? 1) - 1;
-        reaction.users = reaction.users.filter(u => u !== currentUserId);
-        if ((reaction.count ?? 0) <= 0) {
-          post.reactions = post.reactions.filter(r => r.emoji !== emoji);
-        }
-      } else {
-        reaction.count = (reaction.count ?? 0) + 1;
-        reaction.users = [...(reaction.users ?? []), currentUserId];
+  if (reaction) {
+    if (reaction.users?.includes(currentUserId)) {
+      reaction.count = (reaction.count ?? 1) - 1;
+      reaction.users = reaction.users.filter(u => u !== currentUserId);
+      if ((reaction.count ?? 0) <= 0) {
+        post.reactions = post.reactions.filter(r => r.emoji !== emoji);
       }
     } else {
-      post.reactions.push({
-        emoji,
-        count: 1,
-        users: [currentUserId],
-        user: {
-          id: Number(currentUserId),
-          name: currentUser.name ?? 'Anonymous',
-          email: currentUser.email ?? '',
-          role: currentUser.role ?? UserRole.USER
-        },
-        createdAt: new Date().toISOString()
-      });
+      reaction.count = (reaction.count ?? 0) + 1;
+      reaction.users = [...(reaction.users ?? []), currentUserId];
     }
-  } catch (error) {
-    console.error('Failed to add reaction:', error);
+  } else {
+    post.reactions.push({
+      emoji,
+      count: 1,
+      users: [currentUserId],
+      user: {
+        id: Number(currentUserId),
+        name: currentUser.name ?? 'Anonymous',
+        email: currentUser.email ?? '',
+        role: currentUser.role ?? UserRole.USER
+      },
+      createdAt: new Date().toISOString()
+    });
   }
 
   showReactionPickerFor.value = null;
+
+  try {
+    await feedStore.reactToPost(post.id, emoji);
+  } catch (error) {
+    // Revert optimistic update on failure
+    post.reactions = originalReactions;
+    console.error('Failed to add reaction:', error);
+    notificationStore.addNotification({
+      type: 'error',
+      message: 'Failed to add reaction.',
+      link: '/feed'
+    });
+  }
 };
 
 const formatTime = (timestamp: string) => {
@@ -845,25 +984,33 @@ const savePost = async (post: Post) => {
 };
 
 const reportPost = async (post: Post) => {
-  activePostMenu.value = null
-  const reason = prompt('Why are you reporting this post?', 'Inappropriate content')
-  if (!reason) return
+  activePostMenu.value = null;
+  const reason = prompt('Why are you reporting this post?', 'Inappropriate content');
+  if (!reason?.trim()) {
+    notificationStore.addNotification({
+      type: 'error',
+      message: 'Report reason cannot be empty.',
+      link: '/feed'
+    });
+    return;
+  }
 
   try {
-    await feedStore.reportPost(post.id, { reason })
+    await feedStore.reportPost(post.id, { reason: reason.trim() });
     notificationStore.addNotification({
       type: 'system',
       message: 'Post reported. Thank you for helping keep our community safe.',
       link: '/feed'
-    })
+    });
   } catch (error) {
+    console.error('Failed to report post:', error);
     notificationStore.addNotification({
       type: 'error',
       message: 'Failed to report post.',
       link: '/feed'
-    })
+    });
   }
-}
+};
 
 const sharePost = async (post: Post) => {
   activePostMenu.value = null
@@ -906,6 +1053,11 @@ const deletePost = async (post: Post) => {
 };
 
 const toggleFavorite = async (post: Post) => {
+  const originalFavoriteStatus = post.isFavorite;
+
+  // Optimistic update
+  post.isFavorite = !post.isFavorite;
+
   try {
     await feedStore.toggleFavorite(post.id);
     if (post.author.id !== authStore.user?.id && post.isFavorite) {
@@ -922,9 +1074,11 @@ const toggleFavorite = async (post: Post) => {
       });
     }
   } catch (error) {
+    // Revert on failure
+    post.isFavorite = originalFavoriteStatus;
     console.error('Failed to toggle favorite:', error);
     notificationStore.addNotification({
-      type: 'system',
+      type: 'error',
       message: 'Failed to toggle favorite.',
       link: '/feed'
     });
@@ -994,26 +1148,45 @@ const fetchPostsIfNeeded = () => {
   }
 };
 
+
+let isMounted = true;
+
 onMounted(async () => {
+  isMounted = true;
+  if (!authStore.user) {
+    await authStore.fetchUser();
+  }
   try {
     await feedStore.fetchPosts();
     await feedStore.fetchRecommendedPosts();
-  } catch (error) {
-    console.error('Failed to load feed:', error);
+    setupAutoRefresh(); // Start auto-refresh
+  } catch (err: any) {
+    // Error handling
   }
 });
 
 onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside);
-  if (reactionHideTimer) {
-    clearTimeout(reactionHideTimer);
+  isMounted = false;
+  if (refreshInterval.value) {
+    clearInterval(refreshInterval.value);
   }
 });
 
-onActivated(fetchPostsIfNeeded);
 </script>
 
 <style>
+.absolute {
+  position: absolute;
+}
+.bottom-full {
+  bottom: 100%;
+}
+.left-0 {
+  left: 0;
+}
+.z-50 {
+  z-index: 50;
+}
 .transform {
   transition: transform 0.2s ease-in-out;
 }

@@ -1,36 +1,45 @@
 package com.imbus.knowledge.Content_Management.dto;
 
 import com.imbus.knowledge.Content_Management.entities.Post;
-import com.imbus.knowledge.User_Management.entities.User;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.imbus.knowledge.User_Management.dto.UserSummaryDto;
+import com.imbus.knowledge.Content_Management.services.PostService;
+import lombok.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class PostResponse {
     private Long id;
     private String content;
     private String imageUrl;
-    private String title;        // ← Add
-    private String description;  // ← Add
-    private String category;     // ← Add
-    private List<String> tags;   // ← Add
-    private AuthorDto author;
-    private LocalDateTime createdAt;
-    private long commentCount;
-    private long reactionCount;
-    private boolean isFavorite;
+    private String title;
+    private String description;
+    private String category;
     private int viewCount;
     private int likeCount;
     private int shareCount;
-
+    private List<String> tags;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private UserSummaryDto author;
+    private boolean isFavorite;
+    private List<ReactionResponse> reactions;
+    private List<CommentResponse> comments;
+    private List<FavoriteResponse> favorites;
+    private List<ShareResponse> shares;
+    private String linkUrl;
+    private LinkPreviewDto linkPreview;
     // Static factory method
     public static PostResponse fromEntity(Post post, boolean isFavorite) {
         return PostResponse.builder()
@@ -40,36 +49,59 @@ public class PostResponse {
                 .title(post.getTitle())
                 .description(post.getDescription())
                 .category(post.getCategory())
-                .tags(post.getTags())
-                .author(AuthorDto.builder()
-                        .name(post.getAuthor().getName())
-                        .initials(post.getAuthor().getUsername().substring(0, 2))
-                        .avatarUrl(post.getAuthor().getAvatarUrl())
-                        .build())
-                .createdAt(post.getCreatedAt())
-                .commentCount(post.getComments().size())
-                .reactionCount(post.getPostReactions().size())
                 .viewCount(post.getViewCount())
-                .isFavorite(isFavorite)
-                .likeCount(post.getLikeCount())     // ✅ Add
+                .likeCount(post.getLikeCount())
                 .shareCount(post.getShareCount())
+                .tags(post.getTags())
+                .createdAt(post.getCreatedAt())
+                .updatedAt(post.getUpdatedAt())
+                .author(UserSummaryDto.fromUser(post.getAuthor()))
+                .isFavorite(isFavorite)
+
+                // ✅ Link preview
+                .linkUrl(post.getLinkUrl())
+                .linkPreview(LinkPreviewDto.fromEntity(post.getLinkPreview()))
+
+                // ✅ Comments
+                .comments(post.getComments() != null ?
+                        post.getComments().stream()
+                                .map(c -> CommentResponse.builder()
+                                        .id(c.getId())
+                                        .text(c.getText())
+                                        .createdAt(c.getCreatedAt())
+                                        .author(UserSummaryDto.fromUser(c.getAuthor()))
+                                        .build())
+                                .collect(Collectors.toList()) :
+                        List.of())
+
+                // ✅ Reactions
+                .reactions(post.getPostReactions() != null ?
+                        post.getPostReactions().stream()
+                                .map(r -> ReactionResponse.builder()
+                                        .emoji(r.getEmoji())
+                                        .build())
+                                .collect(Collectors.toList()) :
+                        List.of())
+
+                // ✅ Favorites
+                .favorites(post.getFavorites() != null ?
+                        post.getFavorites().stream()
+                                .map(f -> FavoriteResponse.builder()
+                                        .id(f.getId())
+                                        .createdAt(f.getCreatedAt())
+                                        .build())
+                                .collect(Collectors.toList()) :
+                        List.of())
+
+                // ✅ Shares
+                .shares(post.getShares() != null ?
+                        post.getShares().stream()
+                                .map(s -> ShareResponse.builder()
+                                        .id(s.getId())
+                                        .sharedAt(s.getSharedAt())
+                                        .build())
+                                .collect(Collectors.toList()) :
+                        List.of())
+
                 .build();
-    }
-
-    // Inner class with @Data and @Builder
-    @Data
-    @Builder
-    public static class AuthorDto {
-        private String name;
-        private String initials;
-        private String avatarUrl;
-
-        public static AuthorDto from(User user) {
-            return AuthorDto.builder()
-                    .name(user.getName())
-                    .initials(user.getUsername().substring(0, 2))
-                    .avatarUrl(user.getAvatarUrl())
-                    .build();
-        }
-    }
-}
+    }}
