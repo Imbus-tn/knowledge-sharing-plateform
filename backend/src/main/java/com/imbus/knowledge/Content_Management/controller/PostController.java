@@ -6,6 +6,7 @@ import com.imbus.knowledge.Content_Management.dto.PostSummaryDto;
 import com.imbus.knowledge.Content_Management.dto.ReactionRequest;
 import com.imbus.knowledge.Content_Management.entities.Post;
 import com.imbus.knowledge.Content_Management.repositories.FavoriteRepository;
+import com.imbus.knowledge.Content_Management.repositories.PostRepository;
 import com.imbus.knowledge.Content_Management.services.ContentImageStorageService;
 import com.imbus.knowledge.Content_Management.services.PostService;
 import com.imbus.knowledge.User_Management.entities.User;
@@ -16,13 +17,19 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -34,6 +41,7 @@ public class PostController {
     private final PostService postService;
     private final FavoriteRepository favoriteRepository;
     private final UserRepository userRepository;
+    private final PostRepository postRepository;
     private final ContentImageStorageService fileStorageService;
 
     // ✅ Create Post
@@ -172,7 +180,7 @@ public class PostController {
         return ResponseEntity.noContent().build();
     }
 
-    // ✅ Get Post by ID
+    // In PostController.java
     @GetMapping("/{id}")
     public ResponseEntity<PostResponse> getPostById(
             @PathVariable Long id,
@@ -181,19 +189,15 @@ public class PostController {
         try {
             log.info("Fetching post with ID: {}", id);
 
-            Post post = postService.getPostById(id);
-            if (post == null) {
-                log.warn("Post not found for ID: {}", id);
+            Optional<Post> postOpt = postRepository.findWithDetailsById(id);
+            if (postOpt.isEmpty()) {
                 return ResponseEntity.notFound().build();
             }
 
+            Post post = postOpt.get();
             postService.incrementViewCount(id);
 
-            User user = null;
-            if (userDetails != null) {
-                user = userRepository.findById(userDetails.getUser().getId()).orElse(null);
-            }
-
+            User user = userDetails != null ? userRepository.findById(userDetails.getUser().getId()).orElse(null) : null;
             boolean isFavorite = user != null &&
                     favoriteRepository.existsByUserAndPost(user, post);
 
@@ -228,6 +232,24 @@ public class PostController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to react");
         }
     }
+    // ✅ Get Newest Posts Since Last Refresh
+    // PostController.java
+    @GetMapping("/latest")
+    public ResponseEntity<List<PostResponse>> getLatestPosts(
+            @RequestParam(value = "since", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant since,
+            @RequestParam(value = "limit", defaultValue = "20") int limit,
+            @AuthenticationPrincipal UserDetailsImpl userDetails) { // ✅ Use UserDetailsImpl
+
+        try {
+            List<PostResponse> latestPosts = postService.getLatestPosts(since, limit, userDetails);
+            return ResponseEntity.ok(latestPosts);
+        } catch (Exception e) {
+            log.error("Failed to load latest posts", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+
 
     // ✅ Upload Image to Post
     @PostMapping("/{postId}/image")

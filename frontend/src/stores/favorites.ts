@@ -11,18 +11,19 @@ export const useFavoritesStore = defineStore('favorites', {
 
   actions: {
     
-    async loadFavoritesFromAPI() {
+  async loadFavoritesFromAPI() {
   this.loading = true;
   this.error = null;
   try {
-    const res = await axios.get('/content/favorites');
-    this.items = res.data || []; // Use res.data directly
+    const res = await axios.get('/api/content/favorites'); // ✅ Fixed path
+    this.items = res.data || [];
   } catch (err) {
     this.error = 'Failed to load favorites';
     console.error(err);
   } finally {
     this.loading = false;
   }
+
 },
 
     async toggleFavorite(post: Partial<FavoriteItem>) {

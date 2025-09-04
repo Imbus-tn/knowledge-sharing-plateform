@@ -2,12 +2,14 @@ package com.imbus.knowledge.Content_Management.repositories;
 
 import com.imbus.knowledge.Content_Management.entities.Post;
 import org.springframework.data.domain.Page;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,5 +39,16 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @Modifying
     @Query("UPDATE Post p SET p.viewCount = p.viewCount + 1 WHERE p.id = :id")
     void incrementViewCount(@Param("id") Long id);
+    @EntityGraph(attributePaths = {
+            "author"
+    })
+    // PostRepository.java
+    @Query("SELECT p FROM Post p WHERE p.createdAt > :since ORDER BY p.createdAt DESC")
+    Page<Post> findLatestPosts(@Param("since") Instant since, Pageable pageable);
 
+    @EntityGraph(attributePaths = {
+            "author"
+    })
+    @Query("SELECT p FROM Post p ORDER BY p.createdAt DESC")
+    List<Post> findLatestPostsOrdered(Pageable pageable);
 }

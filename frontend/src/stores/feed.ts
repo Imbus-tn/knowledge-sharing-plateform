@@ -98,13 +98,23 @@ const getInitials = (name: string | undefined): string => {
 const createPost = async (postData: {
   content: string;
   imageUrl: string | null;
-  tags: string[];
+  title?: string;
+  description?: string;
+  category?: string;
+  tags?: string[];
 }): Promise<void> => {
   try {
     loading.value = true;
 
     const formData = new FormData();
     formData.append('content', postData.content);
+    if (postData.title) formData.append('title', postData.title);
+    if (postData.description) formData.append('description', postData.description);
+    if (postData.category) formData.append('category', postData.category);
+    if (postData.tags) {
+      postData.tags.forEach(tag => formData.append('tags', tag));
+    }
+
     if (postData.imageUrl) {
       const blob = await fetch(postData.imageUrl).then(r => r.blob());
       formData.append('imageUrl', blob, 'upload.jpg');
@@ -152,7 +162,18 @@ const createPost = async (postData: {
       loading.value = false;
     }
   };
-
+// feedStore.ts
+const checkForNewPosts = async (since: string): Promise<Post[]> => {
+  try {
+    const response = await apiClient.get('/content/posts/latest', {
+      params: { since, limit: 20 }
+    });
+    return response.data;
+  } catch (err: any) {
+    console.error('Failed to check for new posts:', err);
+    return [];
+  }
+};
   // ✅ Delete post
   const deletePost = async (postId: number): Promise<void> => {
     try {

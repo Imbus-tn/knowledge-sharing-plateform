@@ -402,9 +402,13 @@ const formatDate = (dateString: string): string => {
 const getPostImageUrl = (url: string | undefined): string => {
   if (!url) return '';
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+  
   if (url.startsWith('http')) return url;
   if (url.startsWith('/uploads/')) return `${apiUrl}${url}`;
-  return `${apiUrl}/api${url}`;
+  if (url.startsWith('uploads/')) return `${apiUrl}/${url}`;
+  
+  // If it's just "content/images/abc.jpg"
+  return `${apiUrl}/uploads/${url}`;
 };
 
 // Get author avatar
@@ -449,73 +453,40 @@ onMounted(async () => {
   error.value = null;
 
   try {
-   let foundPost: Post | undefined = feedStore.posts.find(p => p.id === postId.value);
-
-try {
-  if (!foundPost) {
-    console.log(`Fetching post ID ${postId.value} from API...`);
     const response = await apiClient.get(`/content/posts/${postId.value}`);
-    console.log('Raw API response:', response.data);
-    foundPost = response.data;
+    const foundPost = response.data;
 
     if (!foundPost?.id) {
       error.value = 'Post not found.';
       return;
     }
 
-    const index = feedStore.posts.findIndex(p => p.id === foundPost!.id);
-    if (index === -1) {
-      feedStore.posts.unshift(foundPost);
-    } else {
-      feedStore.posts[index] = foundPost;
+    // ✅ Ensure author exists
+    if (!foundPost.author) {
+      foundPost.author = {
+        id: 0,
+        name: 'Unknown',
+        email: '',
+        role: UserRole.USER,
+        initials: 'U'
+      };
     }
-  }
 
-  // ✅ Now safe to use
-  if (!foundPost.author) {
-    foundPost.author = {
-      id: 0,
-      name: 'Unknown',
-      email: '',
-      role: UserRole.USER,
-      initials: 'U',
-      avatarUrl: undefined
-    };
-  } else {
-    foundPost.author.role = foundPost.author.role ?? UserRole.USER;
-    foundPost.author.name = foundPost.author.name ?? 'Unknown';
-    foundPost.author.initials = foundPost.author.initials ?? getInitials(foundPost.author.name);
-  }
+    // ✅ Ensure comments exist
+    if (!foundPost.comments) foundPost.comments = [];
 
-  if (!foundPost.comments) foundPost.comments = [];
-
-  post.value = foundPost;
-} catch (err: any) {
-  if (err.response?.status === 404) {
-    error.value = 'Post not found.';
-  } else if (err.message.includes('Network Error')) {
-    error.value = 'Unable to connect to server.';
-  } else {
-    error.value = err.message || 'Failed to load post.';
-  }
-  console.error('Error loading post:', err);
-} finally {
-  loading.value = false;
-}
+    post.value = foundPost;
   } catch (err: any) {
     if (err.response?.status === 404) {
       error.value = 'Post not found.';
-    } else if (err.message.includes('Network Error')) {
-      error.value = 'Unable to connect to server.';
     } else {
-      error.value = err.message || 'Failed to load post.';
+      error.value = 'Failed to load post.';
     }
     console.error('Error loading post:', err);
   } finally {
     loading.value = false;
   }
 });
-
 // Add reaction
 const addReaction = async (post: Post, emoji: string) => {
   try {

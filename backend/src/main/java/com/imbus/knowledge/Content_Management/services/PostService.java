@@ -7,19 +7,19 @@ import com.imbus.knowledge.Content_Management.repositories.*;
 import com.imbus.knowledge.User_Management.entities.User;
 import com.imbus.knowledge.User_Management.entities.UserRole;
 import com.imbus.knowledge.User_Management.repositories.UserRepository;
+import com.imbus.knowledge.User_Management.security.UserDetailsImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -55,6 +55,8 @@ public class PostService {
                         arr -> (Long) arr[1]    // count
                 ));
     }
+
+
     // Add this method to PostService.java
     public Post updatePost(Long postId, CreatePostRequest request, Long userId) {
         Post post = getPostById(postId);
@@ -86,12 +88,46 @@ public class PostService {
         post.setUpdatedAt(LocalDateTime.now());
         return postRepository.save(post);
     }
+    public List<PostResponse> getLatestPosts(Instant since, int limit, UserDetails userDetails) {
+        Pageable pageable = PageRequest.of(0, limit);
+        Page<Post> postPage;
+
+        if (since != null) {
+            postPage = postRepository.findLatestPosts(since, pageable);
+        } else {
+            postPage = postRepository.findAllByOrderByCreatedAtDesc(pageable);
+        }
+
+        List<Post> posts = postPage.getContent(); // ✅ Extract List from Page
+        if (posts.isEmpty()) {
+            return List.of();
+        }
+
+        // Get current user for favorite check
+        User user = null;
+        if (userDetails != null) {
+            user = userRepository.findById(((UserDetailsImpl) userDetails).getUser().getId()).orElse(null);
+        }
+
+        // Get favorite status for all posts in batch
+        Set<Long> favoritePostIds = new HashSet<>();
+        if (user != null) {
+            favoritePostIds.addAll(favoriteRepository.findPostIdsByUser(user.getId()));
+        }
+
+        // Map to PostResponse
+        return posts.stream().map(post -> {
+            boolean isFavorite = favoritePostIds.contains(post.getId());
+            return PostResponse.fromEntity(post, isFavorite);
+        }).collect(Collectors.toList());
+    }
 
     public void deletePost(Long postId, Long userId) {
         Post post = getPostById(postId);
+        User user = getUserById(userId);
 
-        if (!isUserAdmin(userId)) {
-            throw new SecurityException("Only admins can delete posts.");
+        if (!isUserAdmin(userId) && !post.getAuthor().getId().equals(userId)) {
+            throw new SecurityException("You can only delete your own posts.");
         }
 
         postRepository.delete(post);

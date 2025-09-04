@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface FavoriteRepository extends JpaRepository<Favorite, Long> {
     boolean existsByUserAndPost(User user, Post post);
@@ -17,4 +18,9 @@ public interface FavoriteRepository extends JpaRepository<Favorite, Long> {
     List<Favorite> findByUserId(Long userId);
     @Query("SELECT COUNT(f) FROM Favorite f WHERE f.user.id = ?1")
     int countByUserId(Long userId);
+    @Query("SELECT f.post FROM Favorite f WHERE f.user.id = :userId")
+    List<Post> findPostsByUserId(@Param("userId") Long userId);
+    // FavoriteRepository.java
+    @Query("SELECT f.post.id FROM Favorite f WHERE f.user.id = :userId")
+    Set<Long> findPostIdsByUser(@Param("userId") Long userId);
 }

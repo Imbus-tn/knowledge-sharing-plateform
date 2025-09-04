@@ -1,6 +1,9 @@
 package com.imbus.knowledge.Content_Management.controller;
 
 import com.imbus.knowledge.Content_Management.dto.FavoritePostResponse;
+import com.imbus.knowledge.Content_Management.dto.PostResponse;
+import com.imbus.knowledge.Content_Management.entities.Post;
+import com.imbus.knowledge.Content_Management.repositories.FavoriteRepository;
 import com.imbus.knowledge.Content_Management.services.FavoriteService;
 import com.imbus.knowledge.User_Management.security.UserDetailsImpl;
 import lombok.RequiredArgsConstructor;
@@ -9,30 +12,29 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Controller for managing user's favorite posts.
  */
+// FavoriteController.java
 @RestController
 @RequestMapping("/api/content/favorites")
 @RequiredArgsConstructor
 public class FavoriteController {
 
-    private final FavoriteService favoriteService;
+    private final FavoriteRepository favoriteRepository; // ✅ Injected
 
-    /**
-     * Get all favorite posts for the currently authenticated user.
-     * @param userDetails Authenticated user details
-     * @return List of favorite posts
-     */
     @GetMapping
-    public ResponseEntity<List<FavoritePostResponse>> getFavoritesForCurrentUser(
+    public ResponseEntity<List<PostResponse>> getFavoritesForCurrentUser(
             @AuthenticationPrincipal UserDetailsImpl userDetails) {
 
         Long userId = userDetails.getUser().getId();
-        List<FavoritePostResponse> favorites = favoriteService.getFavoritesByUser(userId);
-        return ResponseEntity.ok(favorites);
+        List<Post> favorites = favoriteRepository.findPostsByUserId(userId); // ✅ Correct
+        List<PostResponse> responses = favorites.stream()
+                .map(post -> PostResponse.fromEntity(post, true))
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(responses);
     }
-
-
 }

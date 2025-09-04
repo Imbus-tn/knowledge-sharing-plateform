@@ -662,20 +662,16 @@ const getInitials = (name: string | undefined): string => {
     .join('')
     .slice(0, 2);
 };
-const checkForNewPosts = async () => {
+// feedStore.ts
+const checkForNewPosts = async (since: string): Promise<Post[]> => {
   try {
     const response = await apiClient.get('/content/posts/latest', {
-      params: {
-        since: lastRefreshTime.value.toISOString()
-      }
+      params: { since, limit: 20 }
     });
-    
-    if (response.data.length > 0) {
-      hasNewPosts.value = true;
-      showRefreshButton.value = true;
-    }
-  } catch (error) {
-    console.error('Error checking for new posts:', error);
+    return response.data;
+  } catch (err: any) {
+    console.error('Failed to check for new posts:', err);
+    return [];
   }
 };
 
